@@ -3,5 +3,3 @@ target/*
 .settings/
 .settings/*
 .project
-dist/
-dist/*

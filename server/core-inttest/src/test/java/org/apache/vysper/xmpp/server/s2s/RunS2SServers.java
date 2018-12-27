@@ -28,7 +28,8 @@ import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.vysper.mina.TCPEndpoint;
+import org.apache.vysper.mina.C2SEndpoint;
+import org.apache.vysper.mina.S2SEndpoint;
 import org.apache.vysper.storage.StorageProviderRegistry;
 import org.apache.vysper.storage.inmemory.MemoryStorageProviderRegistry;
 import org.apache.vysper.xmpp.addressing.Entity;
@@ -219,12 +220,12 @@ public class RunS2SServers extends TestCase {
         }
 
         // S2S endpoint
-        TCPEndpoint s2sEndpoint = new TCPEndpoint();
+        S2SEndpoint s2sEndpoint = new S2SEndpoint();
         s2sEndpoint.setPort(5269);
         server.addEndpoint(s2sEndpoint);
         
         // C2S endpoint
-        server.addEndpoint(new TCPEndpoint());
+        server.addEndpoint(new C2SEndpoint());
         
         server.setStorageProviderRegistry(providerRegistry);
         server.setTLSCertificateInfo(new File(keystorePath), keystorePassword);

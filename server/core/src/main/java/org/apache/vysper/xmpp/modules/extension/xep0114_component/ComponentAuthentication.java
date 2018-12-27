@@ -17,19 +17,20 @@
  *  under the License.
  *
  */
-package org.apache.vysper.mina;
 
-import org.apache.vysper.xmpp.server.SessionContext.SessionMode;
+package org.apache.vysper.xmpp.modules.extension.xep0114_component;
 
+import org.apache.vysper.storage.StorageProvider;
+import org.apache.vysper.xmpp.addressing.Entity;
 
 /**
- * Endpoint used for server-to-servr (s2s) connections
+ * interface describing a service for authenticating components
  *
  * @author The Apache MINA Project (dev@mina.apache.org)
  */
-public class S2SEndpoint extends AbstractTCPEndpoint {
+public interface ComponentAuthentication extends StorageProvider {
 
-    public S2SEndpoint() {
-        super(5269, SessionMode.SERVER_2_SERVER);
-    }
+    boolean verifyCredentials(Entity component, String handshake, String streamId);
+
+    boolean exists(Entity component);
 }

@@ -17,19 +17,19 @@
  *  under the License.
  *
  */
-package org.apache.vysper.mina;
+package org.apache.vysper.xmpp.modules.extension.xep0114_component;
 
-import org.apache.vysper.xmpp.server.SessionContext.SessionMode;
-
+import org.apache.vysper.storage.StorageProvider;
+import org.apache.vysper.xmpp.addressing.Entity;
+import org.apache.vysper.xmpp.authorization.AccountCreationException;
 
 /**
- * Endpoint used for server-to-servr (s2s) connections
  *
  * @author The Apache MINA Project (dev@mina.apache.org)
  */
-public class S2SEndpoint extends AbstractTCPEndpoint {
-
-    public S2SEndpoint() {
-        super(5269, SessionMode.SERVER_2_SERVER);
-    }
+public interface ComponentAuthenticationManagement extends StorageProvider {
+    
+    void addComponent(Entity component, String secret) throws AccountCreationException;
+    
+    void changeSecret(Entity component, String secret) throws AccountCreationException;
 }

@@ -27,8 +27,10 @@ import org.apache.mina.filter.ssl.SslFilter;
 import org.apache.vysper.xml.fragment.XMLText;
 import org.apache.vysper.xmpp.protocol.SessionStateHolder;
 import org.apache.vysper.xmpp.protocol.StreamErrorCondition;
+import org.apache.vysper.xmpp.server.DefaultServerRuntimeContext;
 import org.apache.vysper.xmpp.server.ServerRuntimeContext;
 import org.apache.vysper.xmpp.server.SessionContext;
+import org.apache.vysper.xmpp.server.SessionContext.SessionMode;
 import org.apache.vysper.xmpp.server.response.ServerErrorResponses;
 import org.apache.vysper.xmpp.stanza.Stanza;
 import org.slf4j.Logger;
@@ -47,7 +49,13 @@ public class XmppIoHandlerAdapter implements IoHandler {
 
     final Logger logger = LoggerFactory.getLogger(XmppIoHandlerAdapter.class);
 
+    private SessionMode endpointType;
+    
     private ServerRuntimeContext serverRuntimeContext;
+
+    public XmppIoHandlerAdapter(SessionMode endpointType) {
+        this.endpointType = endpointType;
+    }
 
     public void setServerRuntimeContext(ServerRuntimeContext serverRuntimeContext) {
         this.serverRuntimeContext = serverRuntimeContext;
@@ -101,9 +109,12 @@ public class XmppIoHandlerAdapter implements IoHandler {
 
     public void sessionCreated(IoSession ioSession) throws Exception {
         SessionStateHolder stateHolder = new SessionStateHolder();
-        SessionContext sessionContext = new MinaBackedSessionContext(serverRuntimeContext, stateHolder, ioSession);
+        SessionContext sessionContext = new MinaBackedSessionContext(serverRuntimeContext, stateHolder, ioSession, endpointType);
+        
         ioSession.setAttribute(ATTRIBUTE_VYSPER_SESSION, sessionContext);
         ioSession.setAttribute(ATTRIBUTE_VYSPER_SESSIONSTATEHOLDER, stateHolder);
+        
+        ((DefaultServerRuntimeContext)serverRuntimeContext).sessionCreated(sessionContext);
     }
 
     public void sessionOpened(IoSession ioSession) throws Exception {
@@ -116,7 +127,10 @@ public class XmppIoHandlerAdapter implements IoHandler {
         if (sessionContext != null) {
             sessionId = sessionContext.getSessionId();
             sessionContext.endSession(SessionContext.SessionTerminationCause.CONNECTION_ABORT);
+            
+            ((DefaultServerRuntimeContext)serverRuntimeContext).sessionClosed(sessionContext);
         }
+        
         logger.info("session {} has been closed", sessionId);
     }
 

@@ -18,7 +18,6 @@
  *
  */
 package org.apache.vysper.xmpp.server.s2s;
-import java.io.IOException;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.Arrays;
 import java.util.List;
@@ -54,6 +53,7 @@ import org.apache.vysper.xmpp.server.ServerRuntimeContext;
 import org.apache.vysper.xmpp.server.SessionContext;
 import org.apache.vysper.xmpp.server.SessionState;
 import org.apache.vysper.xmpp.server.XMPPVersion;
+import org.apache.vysper.xmpp.server.SessionContext.SessionMode;
 import org.apache.vysper.xmpp.server.response.ServerResponses;
 import org.apache.vysper.xmpp.server.s2s.XmppEndpointResolver.ResolvedAddress;
 import org.apache.vysper.xmpp.stanza.Stanza;
@@ -240,12 +240,7 @@ public class DefaultXMPPServerConnector implements XmppPingListener, XMPPServerC
          */
         @Override
         public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
-            if(cause instanceof IOException) {
-                // socket closed
-                close();
-            } else {
-                LOG.warn("Exception thrown by XMPP server connector to " + otherServer + ", probably a bug in Vysper", cause);
-            }
+            LOG.warn("Exception thrown by XMPP server connector to " + otherServer + ", probably a bug in Vysper", cause);
         }
 
         private StanzaHandler lookupHandler(Stanza stanza) {
@@ -274,9 +269,6 @@ public class DefaultXMPPServerConnector implements XmppPingListener, XMPPServerC
                 Stanza opener = new ServerResponses().getStreamOpenerForServerConnector(serverRuntimeContext.getServerEnitity(), otherServer, XMPPVersion.VERSION_1_0, sessionContext);
                 
                 sessionContext.write(opener);
-            } else if(message == SslFilter.SESSION_UNSECURED) {
-                // unsecured, closing
-                close();
             } else if(message instanceof Stanza) {
                 Stanza stanza = (Stanza) message;
                 
@@ -327,7 +319,7 @@ public class DefaultXMPPServerConnector implements XmppPingListener, XMPPServerC
                     // TODO other stanzas coming here?
                 }
             } else {
-                throw new RuntimeException("Only handles SSL events and stanzas, got: " + message.getClass());
+                throw new RuntimeException("Only handles SSL events and stanzas");
             }
         }
 
@@ -346,7 +338,7 @@ public class DefaultXMPPServerConnector implements XmppPingListener, XMPPServerC
          */
         @Override
         public void sessionOpened(IoSession session) throws Exception {
-            sessionContext = new MinaBackedSessionContext(serverRuntimeContext, sessionStateHolder, session);
+            sessionContext = new MinaBackedSessionContext(serverRuntimeContext, sessionStateHolder, session, SessionMode.SERVER_2_SERVER);
             sessionStateHolder.setState(SessionState.INITIATED);
             Stanza opener = new ServerResponses().getStreamOpenerForServerConnector(serverRuntimeContext.getServerEnitity(), otherServer, XMPPVersion.VERSION_1_0, sessionContext);
             
