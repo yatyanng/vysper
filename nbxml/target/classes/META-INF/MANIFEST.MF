@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Built-By: yanng
+Build-Jdk: 1.8.0_191
+Specification-Title: Apache Vysper Non-blocking XML parser
+Specification-Version: 0.7
+Specification-Vendor: The Apache Software Foundation
+Implementation-Title: Apache Vysper Non-blocking XML parser
+Implementation-Version: 0.7
+Implementation-Vendor-Id: org.apache.vysper
+Implementation-Vendor: The Apache Software Foundation
+Created-By: Maven Integration for Eclipse
+
