@@ -78,7 +78,7 @@ public class ProtocolInitiatedTestCase extends AbstractProtocolStateTestCase {
 
     protected void openClientSession() {
         sessionContext.setSessionState(getDefaultState());
-        Stanza stanza = new ServerResponses().getStreamOpener(true, testFrom, sessionContext.getXMLLang(),
+        Stanza stanza = new ServerResponses().getStreamOpener(NamespaceURIs.JABBER_CLIENT, testFrom, sessionContext.getXMLLang(),
                 XMPPVersion.VERSION_1_0, null).build();
         protocolWorker.processStanza(sessionContext.getServerRuntimeContext(), sessionContext, stanza,
                 sessionStateHolder);
@@ -118,7 +118,7 @@ public class ProtocolInitiatedTestCase extends AbstractProtocolStateTestCase {
         assertFalse("no error", responseVerifier.subElementPresent("error"));
     }
 
-    protected static class IllegalXMPPVersion extends XMPPVersion {
+    protected class IllegalXMPPVersion extends XMPPVersion {
         protected String versionString;
 
         public IllegalXMPPVersion(String version) {
@@ -154,7 +154,7 @@ public class ProtocolInitiatedTestCase extends AbstractProtocolStateTestCase {
     }
 
     protected Stanza getVersionResponse(XMPPVersion versionSent) {
-        Stanza stanza = new ServerResponses().getStreamOpener(true, testFrom, null, versionSent, null).build();
+        Stanza stanza = new ServerResponses().getStreamOpener(NamespaceURIs.JABBER_CLIENT, testFrom, null, versionSent, null).build();
         protocolWorker.processStanza(sessionContext.getServerRuntimeContext(), sessionContext, stanza,
                 sessionStateHolder);
 

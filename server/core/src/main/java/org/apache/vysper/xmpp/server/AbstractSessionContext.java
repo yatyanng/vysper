@@ -27,7 +27,6 @@ import org.apache.vysper.xmpp.addressing.Entity;
 import org.apache.vysper.xmpp.protocol.ProtocolException;
 import org.apache.vysper.xmpp.protocol.SessionStateHolder;
 import org.apache.vysper.xmpp.protocol.StanzaHandler;
-import org.apache.vysper.xmpp.server.SessionContext.SessionTerminationCause;
 import org.apache.vysper.xmpp.stanza.Stanza;
 import org.apache.vysper.xmpp.stanza.StanzaBuilder;
 import org.apache.vysper.xmpp.state.resourcebinding.BindException;
@@ -58,18 +57,19 @@ public abstract class AbstractSessionContext implements SessionContext {
 
     protected Entity serverEntity;
 
+    protected SessionMode sessionMode = SessionMode.CLIENT_2_SERVER;
+    
     private Entity initiatingEntity;
-
-    private boolean serverToServer = false;
 
     private Map<String, Object> attributeMap = new HashMap<String, Object>();
 
-    public AbstractSessionContext(ServerRuntimeContext serverRuntimeContext, SessionStateHolder sessionStateHolder) {
+    public AbstractSessionContext(ServerRuntimeContext serverRuntimeContext, SessionStateHolder sessionStateHolder, SessionMode sessionMode) {
         this.serverRuntimeContext = serverRuntimeContext;
         sessionId = serverRuntimeContext.getNextSessionId();
         serverEntity = serverRuntimeContext.getServerEnitity();
         xmlLang = serverRuntimeContext.getDefaultXMLLang();
         this.sessionStateHolder = sessionStateHolder;
+        this.sessionMode = sessionMode;
     }
 
     @Override
@@ -97,16 +97,12 @@ public abstract class AbstractSessionContext implements SessionContext {
         this.initiatingEntity = entity;
     }
 
-    public boolean isServerToServer() {
-        return serverToServer;
+    public boolean isSessionMode(SessionMode mode) {
+        return mode.equals(sessionMode);
     }
 
-    public void setServerToServer() {
-        serverToServer = true;
-    }
-
-    public void setClientToServer() {
-        serverToServer = false;
+    public SessionMode getSessionMode() {
+        return sessionMode;
     }
 
     public SessionState getState() {

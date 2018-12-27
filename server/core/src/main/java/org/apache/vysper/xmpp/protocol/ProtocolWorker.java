@@ -35,6 +35,7 @@ import org.apache.vysper.xmpp.protocol.worker.StartedProtocolWorker;
 import org.apache.vysper.xmpp.protocol.worker.UnconnectedProtocolWorker;
 import org.apache.vysper.xmpp.server.ServerRuntimeContext;
 import org.apache.vysper.xmpp.server.SessionContext;
+import org.apache.vysper.xmpp.server.SessionContext.SessionMode;
 import org.apache.vysper.xmpp.server.SessionState;
 import org.apache.vysper.xmpp.server.response.ServerErrorResponses;
 import org.apache.vysper.xmpp.stanza.Stanza;
@@ -94,6 +95,7 @@ public class ProtocolWorker implements StanzaProcessor {
             responseWriter.handleUnsupportedStanzaType(sessionContext, stanza);
             return;
         }
+        
         if (sessionContext == null && stanzaHandler.isSessionRequired()) {
             throw new IllegalStateException("handler requires session context");
         }
@@ -103,21 +105,30 @@ public class ProtocolWorker implements StanzaProcessor {
             throw new IllegalStateException("no protocol worker for state " + sessionContext.getState().toString());
         }
 
+        XMPPCoreStanza coreStanza = XMPPCoreStanza.getWrapper(stanza);
+        if(coreStanza != null) {
+            // is a core stanza, must match session mode (e.g. only messages in 
+            // jabber:client namespace sent in C2S session)
+            if(!coreStanza.isValidForMode(sessionContext.getSessionMode())) {
+                responseWriter.handleUnsupportedStanzaType(sessionContext, stanza);
+                return;
+            }
+        }
+
         // check as of RFC3920/4.3:
         if (sessionStateHolder.getState() != SessionState.AUTHENTICATED) {
             // is not authenticated...
-            if (XMPPCoreStanza.getWrapper(stanza) != null
+            if (coreStanza != null
                     && !(stanzaHandler instanceof InBandRegistrationHandler)) {
                 // ... and is a IQ/PRESENCE/MESSAGE stanza!
+                // In-band registration uses IQ stanzas before the stream is authenticated
                 responseWriter.handleNotAuthorized(sessionContext, stanza);
                 return;
             }
         }
 
         Entity from = stanza.getFrom();
-        if(sessionContext.isServerToServer()) {
-            XMPPCoreStanza coreStanza = XMPPCoreStanza.getWrapper(stanza);
-            
+        if(sessionContext.isSessionMode(SessionMode.SERVER_2_SERVER)) {
             if(coreStanza != null) {
                 // stanza must come from the origin server
                 if(from == null) {
@@ -153,7 +164,7 @@ public class ProtocolWorker implements StanzaProcessor {
                 // rewrite namespace
                 stanza = StanzaBuilder.rewriteNamespace(stanza, NamespaceURIs.JABBER_SERVER, NamespaceURIs.JABBER_CLIENT);
             }                
-        } else {
+        } else if(sessionContext.isSessionMode(SessionMode.CLIENT_2_SERVER)) { 
             // make sure that 'from' (if present) matches the bare authorized entity
             // else respond with a stanza error 'unknown-sender'
             // see rfc3920_draft-saintandre-rfc3920bis-04.txt#8.5.4
@@ -184,6 +195,13 @@ public class ProtocolWorker implements StanzaProcessor {
                     responseWriter.handleWrongFromJID(sessionContext, stanza);
                     return;
                 }
+            }
+        } else if(sessionContext.isSessionMode(SessionMode.COMPONENT_ACCEPT)) {
+            // TODO make sure that "from" is from the component
+            
+            // rewrite namespace
+            if(coreStanza != null) {
+                stanza = StanzaBuilder.rewriteNamespace(stanza, NamespaceURIs.JABBER_COMPONENT_ACCEPT, NamespaceURIs.JABBER_CLIENT);
             }
         }
         

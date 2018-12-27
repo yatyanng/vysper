@@ -20,10 +20,11 @@
 
 package org.apache.vysper.xmpp.modules.core.base.handler;
 
-import org.apache.vysper.mina.MinaBackedSessionContext;
 import org.apache.vysper.xml.fragment.XMLElementVerifier;
+import org.apache.vysper.xmpp.addressing.Entity;
 import org.apache.vysper.xmpp.addressing.EntityFormatException;
 import org.apache.vysper.xmpp.addressing.EntityImpl;
+import org.apache.vysper.xmpp.modules.extension.xep0114_component.ComponentAuthentication;
 import org.apache.vysper.xmpp.protocol.NamespaceURIs;
 import org.apache.vysper.xmpp.protocol.ResponseStanzaContainer;
 import org.apache.vysper.xmpp.protocol.ResponseStanzaContainerImpl;
@@ -32,12 +33,12 @@ import org.apache.vysper.xmpp.protocol.StanzaHandler;
 import org.apache.vysper.xmpp.protocol.StreamErrorCondition;
 import org.apache.vysper.xmpp.server.ServerRuntimeContext;
 import org.apache.vysper.xmpp.server.SessionContext;
+import org.apache.vysper.xmpp.server.SessionContext.SessionMode;
 import org.apache.vysper.xmpp.server.SessionState;
 import org.apache.vysper.xmpp.server.XMPPVersion;
 import org.apache.vysper.xmpp.server.response.ServerErrorResponses;
 import org.apache.vysper.xmpp.server.response.ServerResponses;
 import org.apache.vysper.xmpp.stanza.Stanza;
-import org.apache.vysper.xmpp.stanza.StanzaBuilder;
 
 /**
  *
@@ -67,17 +68,6 @@ public class StreamStartHandler implements StanzaHandler {
             boolean isOutboundStanza, SessionContext sessionContext, SessionStateHolder sessionStateHolder) {
         XMLElementVerifier xmlElementVerifier = stanza.getVerifier();
         boolean jabberNamespace = NamespaceURIs.HTTP_ETHERX_JABBER_ORG_STREAMS.equals(stanza.getNamespaceURI());
-
-        boolean clientCall = xmlElementVerifier.namespacePresent(NamespaceURIs.JABBER_CLIENT);
-        boolean serverCall = xmlElementVerifier.namespacePresent(NamespaceURIs.JABBER_SERVER);
-
-        // TODO is it better to derive c2s or s2s from the type of endpoint and verify the namespace here?
-        if (clientCall && serverCall)
-            serverCall = false; // silently ignore ambiguous attributes
-        if (serverCall)
-            sessionContext.setServerToServer();
-        else
-            sessionContext.setClientToServer();
 
         if (sessionStateHolder.getState() != SessionState.INITIATED
                 && sessionStateHolder.getState() != SessionState.ENCRYPTED
@@ -127,7 +117,7 @@ public class StreamStartHandler implements StanzaHandler {
         }
 
         Stanza responseStanza = null;
-        if (clientCall) {
+        if (sessionContext.isSessionMode(SessionMode.CLIENT_2_SERVER)) {
             // RFC3920: 'to' attribute SHOULD be used by the initiating entity
             String toValue = stanza.getAttributeValue("to");
             if (toValue != null) {
@@ -147,7 +137,7 @@ public class StreamStartHandler implements StanzaHandler {
             }
             responseStanza = new ServerResponses().getStreamOpenerForClient(sessionContext.getServerJID(),
                     responseVersion, sessionContext);
-        } else if (serverCall) {
+        } else if (sessionContext.isSessionMode(SessionMode.SERVER_2_SERVER)) {
             // RFC3920: 'from' attribute SHOULD be used by the receiving entity
             String fromValue = stanza.getAttributeValue("from");
             if (fromValue != null) {
@@ -162,10 +152,20 @@ public class StreamStartHandler implements StanzaHandler {
 
             responseStanza = new ServerResponses().getStreamOpenerForServerAcceptor(sessionContext.getServerJID(),
                     responseVersion, sessionContext, serverRuntimeContext.getSslContext() != null);
-        } else {
-            String descriptiveText = "one of the two namespaces must be present: " + NamespaceURIs.JABBER_CLIENT
-                    + " or " + NamespaceURIs.JABBER_SERVER;
-            return respondIllegalNamespaceError(descriptiveText);
+        } else if (sessionContext.isSessionMode(SessionMode.COMPONENT_ACCEPT)) {
+            Entity to = stanza.getTo();
+            
+            // check that component exists
+            ComponentAuthentication componentAuthentication = (ComponentAuthentication) serverRuntimeContext.getStorageProvider(ComponentAuthentication.class);
+            if(componentAuthentication == null || !componentAuthentication.exists(to)) {
+                return new ResponseStanzaContainerImpl(ServerErrorResponses.getStreamError(
+                        StreamErrorCondition.HOST_UNKNOWN, sessionContext.getXMLLang(),
+                        "Unknown component", null));
+            }
+            
+            sessionContext.setInitiatingEntity(to);
+            responseStanza = new ServerResponses().getStreamOpenerForComponentAcceptor(to,
+                    sessionContext);
         }
 
         // if all is correct, go to next phase

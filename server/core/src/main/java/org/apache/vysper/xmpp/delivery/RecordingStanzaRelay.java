@@ -63,7 +63,7 @@ public class RecordingStanzaRelay implements StanzaRelay {
         this.acceptingMode = accepting;
     }
 
-    public static class Triple {
+    public class Triple {
         private Entity entity;
 
         private Stanza stanza;
