@@ -30,6 +30,6 @@ import org.apache.vysper.xmpp.server.SessionContext.SessionMode;
 public class S2SEndpoint extends AbstractTCPEndpoint {
 
     public S2SEndpoint() {
-        super(5269, SessionMode.SERVER_2_SERVER);
+        super("localhost", 5269, SessionMode.SERVER_2_SERVER);
     }
 }

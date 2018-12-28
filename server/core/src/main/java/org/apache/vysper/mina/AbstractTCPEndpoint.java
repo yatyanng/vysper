@@ -1,27 +1,22 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  *
  */
 package org.apache.vysper.mina;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-
 import org.apache.mina.core.filterchain.DefaultIoFilterChainBuilder;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.SocketAcceptor;
@@ -37,55 +32,58 @@ import org.apache.vysper.xmpp.server.SessionContext.SessionMode;
  */
 public abstract class AbstractTCPEndpoint implements Endpoint {
 
-    private ServerRuntimeContext serverRuntimeContext;
+	private ServerRuntimeContext serverRuntimeContext;
 
-    private int port;
-    
-    private SessionMode endpointType;
+	private int port;
 
-    private SocketAcceptor acceptor;
+	private SessionMode endpointType;
 
-    private DefaultIoFilterChainBuilder filterChainBuilder;
+	private SocketAcceptor acceptor;
 
-    
-    public AbstractTCPEndpoint(int defaultPort, SessionMode endpointType) {
-        this.port = defaultPort;
-        this.endpointType = endpointType;
-    }
+	private DefaultIoFilterChainBuilder filterChainBuilder;
 
-    public DefaultIoFilterChainBuilder getFilterChainBuilder() {
-        return filterChainBuilder;
-    }
+	private String hostname;
 
-    public void setServerRuntimeContext(ServerRuntimeContext serverRuntimeContext) {
-        this.serverRuntimeContext = serverRuntimeContext;
-    }
+	public AbstractTCPEndpoint(String hostname, int defaultPort, SessionMode endpointType) {
+		this.port = defaultPort;
+		this.endpointType = endpointType;
+		this.hostname = hostname;
+	}
 
-    public void setPort(int port) {
-        this.port = port;
-    }
+	public DefaultIoFilterChainBuilder getFilterChainBuilder() {
+		return filterChainBuilder;
+	}
 
-    public void start() throws IOException {
-        NioSocketAcceptor acceptor = new NioSocketAcceptor();
+	public void setServerRuntimeContext(ServerRuntimeContext serverRuntimeContext) {
+		this.serverRuntimeContext = serverRuntimeContext;
+	}
 
-        DefaultIoFilterChainBuilder filterChainBuilder = new DefaultIoFilterChainBuilder();
-        //filterChainBuilder.addLast("executorFilter", new OrderedThreadPoolExecutor());
-        filterChainBuilder.addLast("xmppCodec", new ProtocolCodecFilter(new XMPPProtocolCodecFactory()));
-        filterChainBuilder.addLast("loggingFilter", new StanzaLoggingFilter());
-        acceptor.setFilterChainBuilder(filterChainBuilder);
+	public void setHostname(String hostname) {
+		this.hostname = hostname;
+	}
 
-        XmppIoHandlerAdapter adapter = new XmppIoHandlerAdapter(endpointType);
-        adapter.setServerRuntimeContext(serverRuntimeContext);
-        acceptor.setHandler(adapter);
+	public void setPort(int port) {
+		this.port = port;
+	}
 
-        acceptor.setReuseAddress(true);
-        acceptor.bind(new InetSocketAddress(port));
+	public void start() throws IOException {
+		this.acceptor = new NioSocketAcceptor();
 
-        this.acceptor = acceptor;
-    }
+		filterChainBuilder = new DefaultIoFilterChainBuilder();
+		filterChainBuilder.addLast("xmppCodec", new ProtocolCodecFilter(new XMPPProtocolCodecFactory()));
+		filterChainBuilder.addLast("loggingFilter", new StanzaLoggingFilter());
+		acceptor.setFilterChainBuilder(filterChainBuilder);
 
-    public void stop() {
-        acceptor.unbind();
-        acceptor.dispose();
-    }
+		XmppIoHandlerAdapter adapter = new XmppIoHandlerAdapter(endpointType);
+		adapter.setServerRuntimeContext(serverRuntimeContext);
+		acceptor.setHandler(adapter);
+
+		acceptor.setReuseAddress(true);
+		acceptor.bind(new InetSocketAddress(hostname, port));
+	}
+
+	public void stop() {
+		acceptor.unbind();
+		acceptor.dispose();
+	}
 }

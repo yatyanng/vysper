@@ -30,7 +30,7 @@ import org.apache.vysper.xmpp.server.SessionContext.SessionMode;
 public class ComponentEndpoint extends AbstractTCPEndpoint {
 
     public ComponentEndpoint() {
-        super(5275, SessionMode.COMPONENT_ACCEPT);
+        super("localhost", 5275, SessionMode.COMPONENT_ACCEPT);
     }
     
 }
