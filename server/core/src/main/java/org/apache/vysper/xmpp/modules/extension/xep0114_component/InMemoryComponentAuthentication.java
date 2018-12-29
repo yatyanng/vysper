@@ -24,7 +24,8 @@ import java.util.Map;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.vysper.xmpp.addressing.Entity;
-import org.apache.vysper.xmpp.authorization.AccountCreationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * very simple in-memory {@link org.apache.vysper.xmpp.authorization.UserAuthorization} service
@@ -33,26 +34,35 @@ import org.apache.vysper.xmpp.authorization.AccountCreationException;
  */
 public class InMemoryComponentAuthentication implements ComponentAuthentication, ComponentAuthenticationManagement {
 
-    private final Map<Entity, String> userPasswordMap = new HashMap<Entity, String>();
+	private static final Logger logger = LoggerFactory.getLogger(InMemoryComponentAuthentication.class);
+	
+    private final Map<Entity, String> componentPasswordMap = new HashMap<Entity, String>();
 
-    public void addComponent(Entity component, String secret) throws AccountCreationException {
-        userPasswordMap.put(component, secret);
+    public InMemoryComponentAuthentication() {  	
+    }
+    
+    public InMemoryComponentAuthentication(Map<Entity, String> componentPasswordMap) {
+        this.componentPasswordMap.putAll(componentPasswordMap);
+    }
+    
+    public void addComponent(Entity component, String secret) {
+        componentPasswordMap.put(component, secret);
     }
 
-    public void changeSecret(Entity component, String secret) throws AccountCreationException {
-        userPasswordMap.put(component, secret);
+    public void changeSecret(Entity component, String secret) {
+        componentPasswordMap.put(component, secret);
     }
 
     public boolean exists(Entity component) {
-        return userPasswordMap.containsKey(component);
+        return componentPasswordMap.containsKey(component);
     }
 
     public boolean verifyCredentials(Entity component, String handshake, String streamId) {
-        String secret = userPasswordMap.get(component);
+        String secret = componentPasswordMap.get(component);
 
         if(secret != null) {
             String expected = DigestUtils.shaHex(streamId + secret).toLowerCase();
-            
+            logger.info("expected: {}, received handshake: {}", expected, handshake);
             return expected.equals(handshake);
         } else {
             return false;

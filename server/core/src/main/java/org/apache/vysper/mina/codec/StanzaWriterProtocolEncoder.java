@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  */
 public class StanzaWriterProtocolEncoder implements ProtocolEncoder {
 
-    private final Logger logger = LoggerFactory.getLogger(StanzaWriterProtocolEncoder.class);
+    private static final Logger logger = LoggerFactory.getLogger(StanzaWriterProtocolEncoder.class);
 
     public void encode(IoSession ioSession, Object o, ProtocolEncoderOutput protocolEncoderOutput) throws Exception {
         if (!(o instanceof StanzaWriteInfo)) {

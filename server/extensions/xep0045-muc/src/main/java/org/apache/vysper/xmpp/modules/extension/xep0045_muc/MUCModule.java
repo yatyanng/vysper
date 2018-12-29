@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory;
 public class MUCModule extends DefaultDiscoAwareModule implements Component, ComponentInfoRequestListener,
         ItemRequestListener {
 
-    private String subdomain = "chat";
+    private String subdomain = "conference";
 
     private Conference conference;
 
