@@ -240,7 +240,7 @@ public class MUCPresenceHandler extends DefaultPresenceHandler {
 
             // relay presence of the newly added occupant to all existing occupants
             for (Occupant occupant : room.getOccupants()) {
-                sendNewOccupantPresenceToExisting(newOccupant, occupant, room, serverRuntimeContext, nickRewritten);
+                sendNewOccupantPresenceToExisting(newOccupant, occupant, room, serverRuntimeContext, nickRewritten, newRoom);
             }
 
             // send discussion history to user
@@ -317,7 +317,7 @@ public class MUCPresenceHandler extends DefaultPresenceHandler {
     }
 
     private void sendNewOccupantPresenceToExisting(Occupant newOccupant, Occupant existingOccupant, Room room,
-                                                   ServerRuntimeContext serverRuntimeContext, boolean nickRewritten) {
+                                                   ServerRuntimeContext serverRuntimeContext, boolean nickRewritten, boolean newRoom) {
         Entity roomAndNewUserNick = new EntityImpl(room.getJID(), newOccupant.getNick());
 
         List<XMLElement> inner = new ArrayList<XMLElement>();
@@ -336,6 +336,11 @@ public class MUCPresenceHandler extends DefaultPresenceHandler {
 
             // send status to indicate that this is the users own presence
             inner.add(new Status(StatusCode.OWN_PRESENCE));
+            
+            if (newRoom) {
+                // notify the user that this is a new room
+                inner.add(new Status(StatusCode.ROOM_CREATED));
+            }
             if (nickRewritten) inner.add(new Status(StatusCode.NICK_MODIFIED));
         }
 

@@ -38,6 +38,8 @@ import org.apache.vysper.xmpp.stanza.Stanza;
 import org.apache.vysper.xmpp.stanza.StanzaErrorCondition;
 import org.apache.vysper.xmpp.stanza.StanzaErrorType;
 import org.apache.vysper.xmpp.stanza.XMPPCoreStanza;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * handling IQ stanzas (request/response)
@@ -48,6 +50,8 @@ import org.apache.vysper.xmpp.stanza.XMPPCoreStanza;
  */
 public class IQHandler extends XMPPCoreStanzaHandler {
 
+	private static final Logger logger = LoggerFactory.getLogger(IQHandler.class);
+	
     public String getName() {
         return "iq";
     }
@@ -113,7 +117,7 @@ public class IQHandler extends XMPPCoreStanzaHandler {
         } else if (iqType == IQStanzaType.ERROR) {
             // this is handled for all types of stanzas down-stack
         }
-
+        logger.debug("processing stanza {} with instance {}", stanza.getID(), this.getClass().getName());
         return executeIQLogic(stanza, serverRuntimeContext, isOutboundStanza, sessionContext);
     }
 

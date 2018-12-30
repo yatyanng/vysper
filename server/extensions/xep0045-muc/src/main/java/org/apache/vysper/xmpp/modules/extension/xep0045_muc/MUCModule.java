@@ -23,13 +23,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.vysper.xmpp.addressing.Entity;
-import org.apache.vysper.xmpp.addressing.EntityFormatException;
-import org.apache.vysper.xmpp.addressing.EntityImpl;
 import org.apache.vysper.xmpp.addressing.EntityUtils;
 import org.apache.vysper.xmpp.delivery.failure.DeliveryException;
 import org.apache.vysper.xmpp.delivery.failure.IgnoreFailureStrategy;
 import org.apache.vysper.xmpp.modules.DefaultDiscoAwareModule;
 import org.apache.vysper.xmpp.modules.extension.xep0045_muc.handler.MUCIqAdminHandler;
+import org.apache.vysper.xmpp.modules.extension.xep0045_muc.handler.MUCIqOwnerHandler;
 import org.apache.vysper.xmpp.modules.extension.xep0045_muc.handler.MUCMessageHandler;
 import org.apache.vysper.xmpp.modules.extension.xep0045_muc.handler.MUCPresenceHandler;
 import org.apache.vysper.xmpp.modules.extension.xep0045_muc.model.Conference;
@@ -43,6 +42,8 @@ import org.apache.vysper.xmpp.modules.servicediscovery.management.InfoRequest;
 import org.apache.vysper.xmpp.modules.servicediscovery.management.Item;
 import org.apache.vysper.xmpp.modules.servicediscovery.management.ItemRequestListener;
 import org.apache.vysper.xmpp.modules.servicediscovery.management.ServiceDiscoveryRequestException;
+import org.apache.vysper.xmpp.protocol.HandlerDictionary;
+import org.apache.vysper.xmpp.protocol.NamespaceHandlerDictionary;
 import org.apache.vysper.xmpp.protocol.NamespaceURIs;
 import org.apache.vysper.xmpp.protocol.StanzaProcessor;
 import org.apache.vysper.xmpp.server.ServerRuntimeContext;
@@ -235,4 +236,8 @@ public class MUCModule extends DefaultDiscoAwareModule implements Component, Com
         return stanzaProcessor;
     }
 
+    @Override
+    protected void addHandlerDictionaries(List<HandlerDictionary> dictionary) {
+        dictionary.add(new NamespaceHandlerDictionary(NamespaceURIs.XEP0045_MUC_OWNER, new MUCIqOwnerHandler(conference)));
+    }
 }
