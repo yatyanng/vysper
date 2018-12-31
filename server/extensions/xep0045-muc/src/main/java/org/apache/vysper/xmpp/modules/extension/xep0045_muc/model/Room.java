@@ -108,6 +108,14 @@ public class Room implements InfoRequestListener, ItemRequestListener {
         return roomTypes.contains(type);
     }
 
+    public boolean removeRoomType(RoomType type) {
+        return roomTypes.remove(type);
+    }
+    
+    public boolean addRoomType(RoomType type) {
+        return roomTypes.add(type);
+    }
+    
     public boolean rewritesDuplicateNick() {
         return rewriteDuplicateNick;
     }

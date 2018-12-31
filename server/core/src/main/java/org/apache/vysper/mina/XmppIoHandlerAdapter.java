@@ -47,7 +47,7 @@ public class XmppIoHandlerAdapter implements IoHandler {
 
     public static final String ATTRIBUTE_VYSPER_SESSIONSTATEHOLDER = "vysperSessionStateHolder";
 
-    final Logger logger = LoggerFactory.getLogger(XmppIoHandlerAdapter.class);
+    public static final Logger logger = LoggerFactory.getLogger(XmppIoHandlerAdapter.class);
 
     private SessionMode endpointType;
     

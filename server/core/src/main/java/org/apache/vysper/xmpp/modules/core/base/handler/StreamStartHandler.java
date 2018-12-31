@@ -48,11 +48,15 @@ public class StreamStartHandler implements StanzaHandler {
     public String getName() {
         return "stream";
     }
-
+    public String getNamespacePrefix() {
+        return "stream";
+    }
     public boolean verify(Stanza stanza) {
         if (stanza == null)
             return false;
         if (!getName().equals(stanza.getName()))
+            return false;
+        if (!getNamespacePrefix().equals(stanza.getNamespacePrefix()))
             return false;
         String namespaceURI = stanza.getNamespaceURI();
         if (namespaceURI == null)

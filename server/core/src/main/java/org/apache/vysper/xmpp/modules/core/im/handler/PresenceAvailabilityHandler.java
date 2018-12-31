@@ -51,6 +51,7 @@ import org.apache.vysper.xmpp.protocol.commandstanza.EndOfSessionCommandStanza;
 import org.apache.vysper.xmpp.server.ServerRuntimeContext;
 import org.apache.vysper.xmpp.server.SessionContext;
 import org.apache.vysper.xmpp.server.response.ServerErrorResponses;
+import org.apache.vysper.xmpp.server.response.ServerResponses;
 import org.apache.vysper.xmpp.stanza.PresenceStanza;
 import org.apache.vysper.xmpp.stanza.PresenceStanzaType;
 import org.apache.vysper.xmpp.stanza.Stanza;
@@ -58,7 +59,6 @@ import org.apache.vysper.xmpp.stanza.StanzaBuilder;
 import org.apache.vysper.xmpp.stanza.StanzaErrorCondition;
 import org.apache.vysper.xmpp.stanza.StanzaErrorType;
 import org.apache.vysper.xmpp.stanza.XMPPCoreStanza;
-import org.apache.vysper.xmpp.stanza.XMPPCoreStanzaVerifier;
 import org.apache.vysper.xmpp.state.resourcebinding.ResourceRegistry;
 import org.apache.vysper.xmpp.state.resourcebinding.ResourceState;
 import org.slf4j.Logger;
@@ -73,7 +73,7 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
 
     protected static final String DIRECTED_PRESENCE_MAP = "DIRECTED_PRESENCE_MAP_";
 
-    final Logger logger = LoggerFactory.getLogger(PresenceAvailabilityHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(PresenceAvailabilityHandler.class);
 
     /**
      * handles availability presence stanzas. prepares further processing of the 
@@ -93,8 +93,8 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
         // (initiatingEntity)
         // or in case of multiple resources, use the from attribute or return an
         // error if the from attribute is not present.
-        Entity initiatingEntity = sessionContext == null ? null : sessionContext.getInitiatingEntity();
-        XMPPCoreStanzaVerifier verifier = presenceStanza.getCoreVerifier();
+        //Entity initiatingEntity = sessionContext == null ? null : sessionContext.getInitiatingEntity();
+        //XMPPCoreStanzaVerifier verifier = presenceStanza.getCoreVerifier();
         ResourceRegistry registry = serverRuntimeContext.getResourceRegistry();
 
         // check if presence reception is turned off either globally or locally
@@ -113,7 +113,6 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
                 return ServerErrorResponses.getStanzaError(StanzaErrorCondition.UNKNOWN_SENDER,
                         presenceStanza, StanzaErrorType.MODIFY, "sender info insufficient: no from", null, null);
             }
-
             if (available) {
                 return handleOutboundAvailable(presenceStanza, serverRuntimeContext, sessionContext, rosterManager,
                         user, registry);
@@ -166,7 +165,6 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
             EndOfSessionCommandStanza commandStanza = (EndOfSessionCommandStanza) presenceStanza;
             terminationCause = commandStanza.getSessionTerminationCause();
         }
-
         // TODO check if we do have to do something about resource priority
 
         List<Entity> contacts = new ArrayList<Entity>();
@@ -207,8 +205,10 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
         }
 
         // and send them out
+        logger.debug("contacts: {}", contacts);
         relayTo(user, contacts, presenceStanza, sessionContext);
-
+        Stanza stanza = new ServerResponses().getStreamCloser();
+        sessionContext.getResponseWriter().write(stanza);
         return null;
     }
 
@@ -358,7 +358,8 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
         return null;
     }
 
-    private Set<Entity> getDirectedPresenceMap(SessionContext sessionContext, Entity from) {
+    @SuppressWarnings("unchecked")
+	private Set<Entity> getDirectedPresenceMap(SessionContext sessionContext, Entity from) {
         String mapKey = DIRECTED_PRESENCE_MAP + from.getResource();
         Set<Entity> directedPresenceMap = (Set<Entity>) sessionContext.getAttribute(mapKey);
         if (directedPresenceMap == null) {
@@ -399,6 +400,7 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
         try {
             contactItem = rosterManager.getContact(user, contact.getBareJID());
         } catch (RosterException e) {
+            logger.error("Failed to get contact {}", contact.getBareJID(), e);
             contactItem = null;
         }
         if (contactItem == null || !contactItem.hasFrom()) {

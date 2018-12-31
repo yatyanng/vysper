@@ -40,6 +40,10 @@ import org.apache.vysper.xmpp.writer.DenseStanzaLogRenderer;
  */
 public class Stanza extends XMLElement {
 
+	public Stanza(String name, String namespacePrefix, boolean renderStart, boolean renderEnd) {
+    	super(name, namespacePrefix, renderStart, renderEnd);
+    }
+	
     public Stanza(String namespaceURI, String name, String namespacePrefix, List<Attribute> attributes,
             List<XMLFragment> innerFragments) {
         this(namespaceURI, name, namespacePrefix, attributes, innerFragments, null);

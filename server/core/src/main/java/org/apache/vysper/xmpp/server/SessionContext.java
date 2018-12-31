@@ -41,7 +41,7 @@ public interface SessionContext {
          */
         CONNECTION_ABORT,
         /**
-         * the client regularily ended the session (sending </stream:stream>)
+         * the client regularly ended the session (sending </stream:stream>)
          */
         CLIENT_BYEBYE,
         /**
@@ -49,7 +49,7 @@ public interface SessionContext {
          */
         SERVER_SHUTDOWN,
         /**
-         * the server signalled a stream error to the client and subsequently needs
+         * the server signaled a stream error to the client and subsequently needs
          * to close the session down 
          */
         STREAM_ERROR;

@@ -54,6 +54,17 @@ public class XMLElement implements XMLFragment {
 
     protected XMLElementVerifier xmlElementVerifier;
 
+    private boolean renderStart = true;
+    
+    private boolean renderEnd = true;
+    
+    public XMLElement(String name, String namespacePrefix, boolean renderStart, boolean renderEnd) {
+    	this.namespacePrefix = namespacePrefix;
+        this.name = name;
+        this.renderStart = renderStart;
+        this.renderEnd = renderEnd;
+    }
+
     public XMLElement(String namespaceURI, String name, String namespacePrefix, Attribute[] attributes,
             XMLFragment[] innerFragments) {
         this(namespaceURI, name, namespacePrefix, attributes, innerFragments, null);
@@ -345,4 +356,12 @@ public class XMLElement implements XMLFragment {
             xmlElementVerifier = new XMLElementVerifier(this);
         return xmlElementVerifier;
     }
+
+	public boolean isRenderStart() {
+		return renderStart;
+	}
+	
+	public boolean isRenderEnd() {
+		return renderEnd;
+	}
 }

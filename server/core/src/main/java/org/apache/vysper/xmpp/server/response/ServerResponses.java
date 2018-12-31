@@ -33,6 +33,7 @@ import org.apache.vysper.xmpp.server.SessionState;
 import org.apache.vysper.xmpp.server.XMPPVersion;
 import org.apache.vysper.xmpp.stanza.Stanza;
 import org.apache.vysper.xmpp.stanza.StanzaBuilder;
+import org.apache.vysper.xmpp.stanza.StreamEndStanza;
 
 /**
  *
@@ -46,6 +47,10 @@ public class ServerResponses {
         return getStreamOpener(namespaceUri, from, null, version, errorStanza).build();
     }
 
+    public Stanza getStreamCloser() {
+    	return new StreamEndStanza();
+    }
+    
     public Stanza getStreamOpenerForClient(Entity from, XMPPVersion version, SessionContext sessionContext) {
         Stanza innerFeatureStanza;
         if (sessionContext.getState() == SessionState.INITIATED)

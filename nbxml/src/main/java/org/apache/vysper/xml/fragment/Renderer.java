@@ -65,51 +65,54 @@ public class Renderer {
             StringBuilder openElementBuffer, StringBuilder elementContentBuffer, StringBuilder closeElementBuffer) {
         nsResolver.push(element);
 
-        openElementBuffer.append("<");
-        renderElementName(openElementBuffer, element, nsResolver);
-
-        // render namespace declarations
-        Map<String, String> nsAttrs = nsResolver.getNamespaceDeclarations();
-        for (Entry<String, String> nsAttr : nsAttrs.entrySet()) {
-            openElementBuffer.append(" ");
-            String name;
-            if (nsAttr.getKey().length() == 0) {
-                name = "xmlns";
-            } else {
-                name = "xmlns:" + nsAttr.getKey();
-            }
-            renderAttribute(openElementBuffer, name, nsAttr.getValue());
+        if (element.isRenderStart()) {
+	        openElementBuffer.append("<");
+	        renderElementName(openElementBuffer, element, nsResolver);
+	
+	        // render namespace declarations
+	        Map<String, String> nsAttrs = nsResolver.getNamespaceDeclarations();
+	        for (Entry<String, String> nsAttr : nsAttrs.entrySet()) {
+	            openElementBuffer.append(" ");
+	            String name;
+	            if (nsAttr.getKey().length() == 0) {
+	                name = "xmlns";
+	            } else {
+	                name = "xmlns:" + nsAttr.getKey();
+	            }
+	            renderAttribute(openElementBuffer, name, nsAttr.getValue());
+	        }
+	
+	        for (Attribute attribute : element.getAttributes()) {
+	            // make sure we do not render namespace attributes,
+	            // nor normal attributes containing namespace declarations (probably due to
+	            // the parser not correctly creating namespace attributes for these which are then 
+	            // copied into for example error responses)
+	
+	            if (!attribute.getName().startsWith("xmlns")) {
+	                openElementBuffer.append(" ");
+	                renderAttribute(openElementBuffer, attribute, nsResolver);
+	            }
+	        }
+	        openElementBuffer.append(">");
+	        for (XMLFragment xmlFragment : element.getInnerFragments()) {
+	            if (xmlFragment instanceof XMLElement) {
+	                renderXMLElement((XMLElement) xmlFragment, nsResolver, elementContentBuffer, elementContentBuffer,
+	                        elementContentBuffer);
+	            } else if (xmlFragment instanceof XMLText) {
+	                elementContentBuffer.append(escapeTextValue(((XMLText) xmlFragment).getText()));
+	            } else if(xmlFragment == null) {
+	                // ignore
+	            } else {
+	                throw new UnsupportedOperationException("cannot render XML fragment of type "
+	                        + xmlFragment.getClass().getName());
+	            }
+	        }
         }
-
-        for (Attribute attribute : element.getAttributes()) {
-            // make sure we do not render namespace attributes,
-            // nor normal attributes containing namespace declarations (probably due to
-            // the parser not correctly creating namespace attributes for these which are then 
-            // copied into for example error responses)
-
-            if (!attribute.getName().startsWith("xmlns")) {
-                openElementBuffer.append(" ");
-                renderAttribute(openElementBuffer, attribute, nsResolver);
-            }
+        if (element.isRenderEnd()) {
+	        closeElementBuffer.append("</");
+	        renderElementName(closeElementBuffer, element, nsResolver);
+	        closeElementBuffer.append(">");
         }
-        openElementBuffer.append(">");
-        for (XMLFragment xmlFragment : element.getInnerFragments()) {
-            if (xmlFragment instanceof XMLElement) {
-                renderXMLElement((XMLElement) xmlFragment, nsResolver, elementContentBuffer, elementContentBuffer,
-                        elementContentBuffer);
-            } else if (xmlFragment instanceof XMLText) {
-                elementContentBuffer.append(escapeTextValue(((XMLText) xmlFragment).getText()));
-            } else if(xmlFragment == null) {
-                // ignore
-            } else {
-                throw new UnsupportedOperationException("cannot render XML fragment of type "
-                        + xmlFragment.getClass().getName());
-            }
-        }
-
-        closeElementBuffer.append("</");
-        renderElementName(closeElementBuffer, element, nsResolver);
-        closeElementBuffer.append(">");
         // remove this element from the NS resolver stack
         nsResolver.pop();
     }

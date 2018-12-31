@@ -37,9 +37,9 @@ import org.apache.vysper.xmpp.stanza.XMPPCoreStanza;
  */
 public class PresenceHandler extends XMPPCoreStanzaHandler {
 
-    private final static PresenceAvailabilityHandler AVAILABILITY_HANDLER = new PresenceAvailabilityHandler();
+    private static final PresenceAvailabilityHandler AVAILABILITY_HANDLER = new PresenceAvailabilityHandler();
 
-    private final static PresenceSubscriptionHandler SUBSCRIPTION_HANDLER = new PresenceSubscriptionHandler();
+    private static final PresenceSubscriptionHandler SUBSCRIPTION_HANDLER = new PresenceSubscriptionHandler();
 
     public String getName() {
         return "presence";
@@ -58,13 +58,13 @@ public class PresenceHandler extends XMPPCoreStanzaHandler {
         boolean subscriptionRelated = isSubscriptionType(presenceStanza.getPresenceType());
 
         RosterManager rosterManager = RosterManagerUtils.getRosterInstance(serverRuntimeContext, sessionContext);
-
-        if (!subscriptionRelated)
+        if (!subscriptionRelated) {
             return AVAILABILITY_HANDLER.executeCorePresence(serverRuntimeContext, isOutboundStanza, sessionContext,
                     presenceStanza, rosterManager);
-        else
+        } else {
             return SUBSCRIPTION_HANDLER.executeCorePresence(serverRuntimeContext, isOutboundStanza, sessionContext,
                     presenceStanza, rosterManager);
+        }
     }
 
 }

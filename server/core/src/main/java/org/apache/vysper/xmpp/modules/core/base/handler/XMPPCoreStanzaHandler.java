@@ -87,7 +87,7 @@ public abstract class XMPPCoreStanzaHandler implements StanzaHandler {
                     errorDescription = "stanza which is not of type error must not include an 'error' child";
                 }
             }
-
+            logger.trace("error description: {}", errorDescription);
             // at this point, we are not allowed to respond with another error
             // we cannot really close the stream
             // we simply ignore it.
@@ -112,7 +112,7 @@ public abstract class XMPPCoreStanzaHandler implements StanzaHandler {
         }
 
         Stanza responseStanza = executeCore(stanza, serverRuntimeContext, isOutboundStanza, sessionContext);
-
+        logger.debug("stanza {} response stanza {}", stanza, responseStanza);
         if (responseStanza != null)
             return new ResponseStanzaContainerImpl(responseStanza);
 
