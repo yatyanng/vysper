@@ -92,7 +92,7 @@ public class DiscoInfoIQHandler extends DefaultIQHandler {
         Entity to = stanza.getTo();
         boolean isServerInfoRequest = false;
         boolean isComponentInfoRequest = false;
-        Entity serviceEntity = serverRuntimeContext.getServerEnitity();
+        Entity serviceEntity = serverRuntimeContext.getServerEntity();
         if (to == null || to.equals(serviceEntity)) {
             isServerInfoRequest = true; // this can only be meant to query the server
         } else if (serverRuntimeContext.getComponentStanzaProcessor(to) != null) {

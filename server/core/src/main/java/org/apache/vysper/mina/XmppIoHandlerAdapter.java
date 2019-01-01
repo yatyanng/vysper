@@ -33,6 +33,7 @@ import org.apache.vysper.xmpp.server.SessionContext;
 import org.apache.vysper.xmpp.server.SessionContext.SessionMode;
 import org.apache.vysper.xmpp.server.response.ServerErrorResponses;
 import org.apache.vysper.xmpp.stanza.Stanza;
+import org.apache.vysper.xmpp.writer.DenseStanzaLogRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXParseException;
@@ -78,7 +79,9 @@ public class XmppIoHandlerAdapter implements IoHandler {
         SessionContext session = extractSession(ioSession);
         SessionStateHolder stateHolder = (SessionStateHolder) ioSession
                 .getAttribute(ATTRIBUTE_VYSPER_SESSIONSTATEHOLDER);
-
+        if(logger.isDebugEnabled()) {
+        	logger.debug("processing {}", DenseStanzaLogRenderer.render(stanza));
+        }
         serverRuntimeContext.getStanzaProcessor().processStanza(serverRuntimeContext, session, stanza, stateHolder);
     }
 

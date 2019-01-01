@@ -128,11 +128,11 @@ public class InBandRegistrationHandler extends DefaultIQHandler {
                 Entity user;
                 if(username.contains("@")) {
                     user = EntityImpl.parse(username);
-                    if(!serverRuntimeContext.getServerEnitity().getDomain().equals(user.getDomain())) {
+                    if(!serverRuntimeContext.getServerEntity().getDomain().equals(user.getDomain())) {
                         throw new XMLSemanticError("Username must be in the same domain as the server");
                     }
                 } else {
-                    user = EntityImpl.parse(username + "@" + serverRuntimeContext.getServerEnitity());
+                    user = EntityImpl.parse(username + "@" + serverRuntimeContext.getServerEntity());
                 }
                 
                 if(sessionContext.getState().equals(SessionState.AUTHENTICATED)) {

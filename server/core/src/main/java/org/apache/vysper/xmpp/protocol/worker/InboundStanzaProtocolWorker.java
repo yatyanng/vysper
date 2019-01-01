@@ -38,7 +38,7 @@ public class InboundStanzaProtocolWorker extends AbstractStateAwareProtocolWorke
     }
 
     @Override
-    protected boolean isProcessingOutboundStanzas() {
+    protected boolean isProcessingOutboundStanzas(SessionContext sessionContext, Stanza stanza) {
         return false; // this worker is delivering inbound only
     }
 

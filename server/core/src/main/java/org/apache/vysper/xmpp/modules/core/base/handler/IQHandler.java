@@ -117,7 +117,7 @@ public class IQHandler extends XMPPCoreStanzaHandler {
         } else if (iqType == IQStanzaType.ERROR) {
             // this is handled for all types of stanzas down-stack
         }
-        logger.debug("processing stanza {} with instance {}", stanza.getID(), this.getClass().getName());
+        logger.debug("processing stanza {} from "+stanza.getFrom()+" with instance {}", stanza.getID(), getClass().getName());
         return executeIQLogic(stanza, serverRuntimeContext, isOutboundStanza, sessionContext);
     }
 

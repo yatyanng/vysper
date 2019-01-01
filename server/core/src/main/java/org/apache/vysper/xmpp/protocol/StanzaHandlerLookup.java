@@ -115,7 +115,7 @@ public class StanzaHandlerLookup extends AbstractStanzaHandlerLookup {
         StanzaHandler handlerForElement = null;
 
         Entity to = stanza.getTo();
-        Entity serverEntity = (serverRuntimeContext == null) ? null : serverRuntimeContext.getServerEnitity();
+        Entity serverEntity = (serverRuntimeContext == null) ? null : serverRuntimeContext.getServerEntity();
         boolean isAddressedToServerOrComponent = (to == null || (!to.isNodeSet() && !to.isResourceSet()));
         boolean isAddressedToComponent = (to != null) && isAddressedToServerOrComponent && serverEntity != null
                 && (!serverEntity.equals(to));

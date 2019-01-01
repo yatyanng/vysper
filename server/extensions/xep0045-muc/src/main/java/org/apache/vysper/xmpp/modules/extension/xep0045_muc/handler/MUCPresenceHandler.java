@@ -228,7 +228,7 @@ public class MUCPresenceHandler extends DefaultPresenceHandler {
                 // make new occupant an Admin, but do not downgrade from Owner
                 // Admin affilitation implies Moderator role (see XEP-0045 5.1.2)
                 if (roomAffiliations.getAffiliation(newOccupantJid) != Affiliation.Owner) {
-                    roomAffiliations.add(newOccupantJid, Affiliation.Admin);
+                    roomAffiliations.add(newOccupantJid, Affiliation.Owner);
                     newOccupant.setRole(Role.Moderator);
                 }
             }

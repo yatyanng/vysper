@@ -266,7 +266,7 @@ public class DefaultXMPPServerConnector implements XmppPingListener, XMPPServerC
                 
                 sessionContext.setIsReopeningXMLStream();
                 
-                Stanza opener = new ServerResponses().getStreamOpenerForServerConnector(serverRuntimeContext.getServerEnitity(), otherServer, XMPPVersion.VERSION_1_0, sessionContext);
+                Stanza opener = new ServerResponses().getStreamOpenerForServerConnector(serverRuntimeContext.getServerEntity(), otherServer, XMPPVersion.VERSION_1_0, sessionContext);
                 
                 sessionContext.write(opener);
             } else if(message instanceof Stanza) {
@@ -296,10 +296,10 @@ public class DefaultXMPPServerConnector implements XmppPingListener, XMPPServerC
                     String version = stanza.getAttributeValue("version");
                     if(version == null) {
                         // old protocol, assume dialback
-                        String dailbackId = new DialbackIdGenerator().generate(otherServer, serverRuntimeContext.getServerEnitity(), sessionContext.getSessionId());
+                        String dailbackId = new DialbackIdGenerator().generate(otherServer, serverRuntimeContext.getServerEntity(), sessionContext.getSessionId());
                         
                         Stanza dbResult = new StanzaBuilder("result", NamespaceURIs.JABBER_SERVER_DIALBACK, "db")
-                            .addAttribute("from", serverRuntimeContext.getServerEnitity().getDomain())
+                            .addAttribute("from", serverRuntimeContext.getServerEntity().getDomain())
                             .addAttribute("to", otherServer.getDomain())
                             .addText(dailbackId)
                             .build();
@@ -340,7 +340,7 @@ public class DefaultXMPPServerConnector implements XmppPingListener, XMPPServerC
         public void sessionOpened(IoSession session) throws Exception {
             sessionContext = new MinaBackedSessionContext(serverRuntimeContext, sessionStateHolder, session, SessionMode.SERVER_2_SERVER);
             sessionStateHolder.setState(SessionState.INITIATED);
-            Stanza opener = new ServerResponses().getStreamOpenerForServerConnector(serverRuntimeContext.getServerEnitity(), otherServer, XMPPVersion.VERSION_1_0, sessionContext);
+            Stanza opener = new ServerResponses().getStreamOpenerForServerConnector(serverRuntimeContext.getServerEntity(), otherServer, XMPPVersion.VERSION_1_0, sessionContext);
             
             sessionContext.write(opener);
         }
@@ -349,7 +349,7 @@ public class DefaultXMPPServerConnector implements XmppPingListener, XMPPServerC
     private class PingTask extends TimerTask {
         public void run() {
             XmppPingModule pingModule = serverRuntimeContext.getModule(XmppPingModule.class);
-            pingModule.ping(DefaultXMPPServerConnector.this, serverRuntimeContext.getServerEnitity(), otherServer, pingTimeout, DefaultXMPPServerConnector.this);
+            pingModule.ping(DefaultXMPPServerConnector.this, serverRuntimeContext.getServerEntity(), otherServer, pingTimeout, DefaultXMPPServerConnector.this);
         }
     }
 }

@@ -19,6 +19,8 @@
  */
 package org.apache.vysper.xmpp.protocol.worker;
 
+import org.apache.vysper.xmpp.addressing.Entity;
+import org.apache.vysper.xmpp.addressing.EntityUtils;
 import org.apache.vysper.xmpp.protocol.ProtocolException;
 import org.apache.vysper.xmpp.protocol.ResponseStanzaContainer;
 import org.apache.vysper.xmpp.protocol.ResponseWriter;
@@ -30,56 +32,60 @@ import org.apache.vysper.xmpp.server.SessionState;
 import org.apache.vysper.xmpp.stanza.Stanza;
 
 /**
- * high-level xmpp protocol logic, state-aware.
- * writes response stanzas
+ * high-level xmpp protocol logic, state-aware. writes response stanzas
  *
  * @author The Apache MINA Project (dev@mina.apache.org)
  */
 public abstract class AbstractStateAwareProtocolWorker implements StateAwareProtocolWorker {
 
-    abstract public SessionState getHandledState();
+	abstract public SessionState getHandledState();
 
-    public void processStanza(SessionContext sessionContext, SessionStateHolder sessionStateHolder, Stanza stanza,
-            StanzaHandler stanzaHandler) {
-        boolean proceed = checkState(sessionContext, sessionStateHolder, stanza, stanzaHandler);
-        if (!proceed)
-            return; // TODO close stream?
+	public void processStanza(SessionContext sessionContext, SessionStateHolder sessionStateHolder, Stanza stanza,
+			StanzaHandler stanzaHandler) {
+		boolean proceed = checkState(sessionContext, sessionStateHolder, stanza, stanzaHandler);
+		if (!proceed)
+			return; // TODO close stream?
 
-        ResponseStanzaContainer responseStanzaContainer = executeHandler(sessionContext, sessionStateHolder, stanza,
-                stanzaHandler);
+		ResponseStanzaContainer responseStanzaContainer = executeHandler(sessionContext, sessionStateHolder, stanza,
+				stanzaHandler);
 
-        writeResponse(sessionContext, responseStanzaContainer);
-    }
+		writeResponse(sessionContext, responseStanzaContainer);
+	}
 
-    protected boolean checkState(SessionContext sessionContext, SessionStateHolder sessionStateHolder, Stanza stanza,
-            StanzaHandler stanzaHandler) {
-        return 0 == getHandledState().compareTo(sessionContext.getState());
-    }
+	protected boolean checkState(SessionContext sessionContext, SessionStateHolder sessionStateHolder, Stanza stanza,
+			StanzaHandler stanzaHandler) {
+		return 0 == getHandledState().compareTo(sessionContext.getState());
+	}
 
-    protected void writeResponse(SessionContext sessionContext, ResponseStanzaContainer responseStanzaContainer) {
-        if (responseStanzaContainer != null && responseStanzaContainer.getResponseStanza() != null) {
-            if (sessionContext == null) {
-                throw new IllegalStateException("no session context to write stanza to: "
-                        + responseStanzaContainer.getResponseStanza());
-            }
-            ResponseWriter.writeResponse(sessionContext, responseStanzaContainer);
-        }
-    }
+	protected void writeResponse(SessionContext sessionContext, ResponseStanzaContainer responseStanzaContainer) {
+		if (responseStanzaContainer != null && responseStanzaContainer.getResponseStanza() != null) {
+			if (sessionContext == null) {
+				throw new IllegalStateException(
+						"no session context to write stanza to: " + responseStanzaContainer.getResponseStanza());
+			}
+			ResponseWriter.writeResponse(sessionContext, responseStanzaContainer);
+		}
+	}
 
-    protected ResponseStanzaContainer executeHandler(SessionContext sessionContext,
-            SessionStateHolder sessionStateHolder, Stanza stanza, StanzaHandler stanzaHandler) {
-        ResponseStanzaContainer responseStanzaContainer = null;
-        try {
-            responseStanzaContainer = stanzaHandler.execute(stanza, sessionContext.getServerRuntimeContext(),
-                    isProcessingOutboundStanzas(), sessionContext, sessionStateHolder);
-        } catch (ProtocolException e) {
-            ResponseWriter.handleProtocolError(e, sessionContext, stanza);
-            return null;
-        }
-        return responseStanzaContainer;
-    }
+	protected ResponseStanzaContainer executeHandler(SessionContext sessionContext,
+			SessionStateHolder sessionStateHolder, Stanza stanza, StanzaHandler stanzaHandler) {
+		ResponseStanzaContainer responseStanzaContainer = null;
+		try {
+			responseStanzaContainer = stanzaHandler.execute(stanza, sessionContext.getServerRuntimeContext(),
+					isProcessingOutboundStanzas(sessionContext, stanza), sessionContext, sessionStateHolder);
+		} catch (ProtocolException e) {
+			ResponseWriter.handleProtocolError(e, sessionContext, stanza);
+			return null;
+		}
+		return responseStanzaContainer;
+	}
 
-    protected boolean isProcessingOutboundStanzas() {
-        return true;
-    }
+	protected boolean isProcessingOutboundStanzas(SessionContext sessionContext, Stanza stanza) {
+		Entity from = stanza.getFrom();
+
+		boolean fromComponent = (from != null)
+				&& EntityUtils.isAddressingServerComponent(from, sessionContext.getServerRuntimeContext().getServerEntity());
+		
+		return !fromComponent;
+	}
 }
