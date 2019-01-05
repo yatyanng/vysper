@@ -66,7 +66,7 @@ import org.slf4j.LoggerFactory;
  */
 public class DefaultServerRuntimeContext implements ServerRuntimeContext, ModuleRegistry {
 
-    final Logger logger = LoggerFactory.getLogger(DefaultServerRuntimeContext.class);
+    static final Logger logger = LoggerFactory.getLogger(DefaultServerRuntimeContext.class);
 
     // basic internal data structures and configuration...
 
@@ -333,11 +333,9 @@ public class DefaultServerRuntimeContext implements ServerRuntimeContext, Module
 
         List<HandlerDictionary> handlerDictionaryList = module.getHandlerDictionaries();
         if (handlerDictionaryList != null) {
-
             for (HandlerDictionary handlerDictionary : handlerDictionaryList) {
                 addDictionary(handlerDictionary);
             }
-
         }
 
         if (module instanceof Component) {
@@ -351,7 +349,8 @@ public class DefaultServerRuntimeContext implements ServerRuntimeContext, Module
         return Collections.unmodifiableList(modules);
     }
 
-    public <T> T getModule(Class<T> clazz) {
+    @SuppressWarnings("unchecked")
+	public <T> T getModule(Class<T> clazz) {
         for(Module module : modules) {
             if(module.getClass().equals(clazz)) return (T) module;
         }
@@ -412,6 +411,4 @@ public class DefaultServerRuntimeContext implements ServerRuntimeContext, Module
     public void sessionClosed(SessionContext sessionContext) {
         sessions.remove(sessionContext);
     }
-
-
 }

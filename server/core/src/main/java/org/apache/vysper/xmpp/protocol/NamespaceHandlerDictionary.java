@@ -30,39 +30,43 @@ import org.apache.vysper.xmpp.stanza.Stanza;
  */
 public class NamespaceHandlerDictionary extends DefaultHandlerDictionary {
 
-    private String namespaceURI;
+	private String namespaceURI;
 
-    public NamespaceHandlerDictionary(String namespaceURI) {
-        this.namespaceURI = namespaceURI;
-    }
+	public NamespaceHandlerDictionary(String namespaceURI) {
+		this.namespaceURI = namespaceURI;
+	}
 
-    public NamespaceHandlerDictionary(String namespaceURI, List<StanzaHandler> handlerList) {
-        super(handlerList);
-        this.namespaceURI = namespaceURI;
-    }
+	public NamespaceHandlerDictionary(String namespaceURI, List<StanzaHandler> handlerList) {
+		super(handlerList);
+		this.namespaceURI = namespaceURI;
+	}
 
-    public NamespaceHandlerDictionary(String namespaceURI, StanzaHandler stanzaHandler) {
-        super(stanzaHandler);
-        this.namespaceURI = namespaceURI;
-    }
+	public NamespaceHandlerDictionary(String namespaceURI, StanzaHandler stanzaHandler) {
+		super(stanzaHandler);
+		this.namespaceURI = namespaceURI;
+	}
 
-    public String getNamespaceURI() {
-        return namespaceURI;
-    }
+	public String getNamespaceURI() {
+		return namespaceURI;
+	}
 
-    @Override
-    public StanzaHandler get(Stanza stanza) {
-        String namespace;
-        if(stanza.getVerifier().subElementsPresentExact(1)) {
-            namespace = stanza.getFirstInnerElement().getNamespaceURI();
-        } else {
-            namespace = stanza.getNamespaceURI();
-        }
-        
-        if(namespace != null && namespace.equals(namespaceURI)) {
-            return super.get(stanza);
-        } else {
-            return null;
-        }
-    }
+	@Override
+	public StanzaHandler get(Stanza stanza) {
+		String namespace;
+		if (stanza.getVerifier().subElementsPresentExact(1)) {
+			namespace = stanza.getFirstInnerElement().getNamespaceURI();
+		} else {
+			namespace = stanza.getNamespaceURI();
+		}
+
+		if (namespace != null && namespace.equals(namespaceURI)) {
+			return super.get(stanza);
+		} else {
+			return null;
+		}
+	}
+
+	public String toString() {
+		return getClass().getSimpleName() + "(" + namespaceURI + ")";
+	}
 }

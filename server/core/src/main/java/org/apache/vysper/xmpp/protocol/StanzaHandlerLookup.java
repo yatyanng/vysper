@@ -33,6 +33,8 @@ import org.apache.vysper.xmpp.modules.extension.xep0220_server_dailback.DbVerify
 import org.apache.vysper.xmpp.server.ServerRuntimeContext;
 import org.apache.vysper.xmpp.stanza.Stanza;
 import org.apache.vysper.xmpp.stanza.XMPPCoreStanza;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * for effeciently looking up the right handler for a stanza. at first this class tries to determine the stanza's
@@ -45,6 +47,8 @@ import org.apache.vysper.xmpp.stanza.XMPPCoreStanza;
  */
 public class StanzaHandlerLookup extends AbstractStanzaHandlerLookup {
 
+	static final Logger logger = LoggerFactory.getLogger(StanzaHandlerLookup.class);
+	
     private IQHandler iqHandler = new RelayingIQHandler();
 
     private MessageHandler messageHandler = new MessageHandler();
@@ -72,6 +76,7 @@ public class StanzaHandlerLookup extends AbstractStanzaHandlerLookup {
             return null;
 
         // allow extensions to override default handling
+        logger.debug("Getting Basic Handler for stanza {}", stanza);
         StanzaHandler stanzaHandler = getHandlerForElement(stanza, stanza);
         
         if(stanzaHandler != null) {

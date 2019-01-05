@@ -44,122 +44,124 @@ import org.xml.sax.SAXParseException;
  */
 public class XmppIoHandlerAdapter implements IoHandler {
 
-    public static final String ATTRIBUTE_VYSPER_SESSION = "vysperSession";
+	public static final String ATTRIBUTE_VYSPER_SESSION = "vysperSession";
 
-    public static final String ATTRIBUTE_VYSPER_SESSIONSTATEHOLDER = "vysperSessionStateHolder";
+	public static final String ATTRIBUTE_VYSPER_SESSIONSTATEHOLDER = "vysperSessionStateHolder";
 
-    public static final Logger logger = LoggerFactory.getLogger(XmppIoHandlerAdapter.class);
+	public static final Logger logger = LoggerFactory.getLogger(XmppIoHandlerAdapter.class);
 
-    private SessionMode endpointType;
-    
-    private ServerRuntimeContext serverRuntimeContext;
+	private SessionMode endpointType;
 
-    public XmppIoHandlerAdapter(SessionMode endpointType) {
-        this.endpointType = endpointType;
-    }
+	private ServerRuntimeContext serverRuntimeContext;
 
-    public void setServerRuntimeContext(ServerRuntimeContext serverRuntimeContext) {
-        this.serverRuntimeContext = serverRuntimeContext;
-    }
+	public XmppIoHandlerAdapter(SessionMode endpointType) {
+		this.endpointType = endpointType;
+	}
 
-    public void messageReceived(IoSession ioSession, Object message) throws Exception {
-        if (!(message instanceof Stanza)) {
-            if (message instanceof XMLText) {
-                String text = ((XMLText) message).getText();
-                // tolerate reasonable amount of whitespaces for stanza separation
-                if (text.length() < 40 && text.trim().length() == 0)
-                    return;
-            }
+	public void setServerRuntimeContext(ServerRuntimeContext serverRuntimeContext) {
+		this.serverRuntimeContext = serverRuntimeContext;
+	}
 
-            messageReceivedNoStanza(ioSession, message);
-            return;
-        }
+	public void messageReceived(IoSession ioSession, Object message) throws Exception {
+		if (!(message instanceof Stanza)) {
+			if (message instanceof XMLText) {
+				String text = ((XMLText) message).getText();
+				// tolerate reasonable amount of whitespaces for stanza separation
+				if (text.length() < 40 && text.trim().length() == 0)
+					return;
+			}
 
-        Stanza stanza = (Stanza) message;
-        SessionContext session = extractSession(ioSession);
-        SessionStateHolder stateHolder = (SessionStateHolder) ioSession
-                .getAttribute(ATTRIBUTE_VYSPER_SESSIONSTATEHOLDER);
-        if(logger.isDebugEnabled()) {
-        	logger.debug("processing {}", DenseStanzaLogRenderer.render(stanza));
-        }
-        serverRuntimeContext.getStanzaProcessor().processStanza(serverRuntimeContext, session, stanza, stateHolder);
-    }
+			messageReceivedNoStanza(ioSession, message);
+			return;
+		}
 
-    private void messageReceivedNoStanza(IoSession ioSession, Object message) {
-        if (message == SslFilter.SESSION_SECURED) {
-            SessionContext session = extractSession(ioSession);
-            SessionStateHolder stateHolder = (SessionStateHolder) ioSession
-                    .getAttribute(ATTRIBUTE_VYSPER_SESSIONSTATEHOLDER);
-            serverRuntimeContext.getStanzaProcessor().processTLSEstablished(session, stateHolder);
-            return;
-        } else if (message == SslFilter.SESSION_UNSECURED) {
-            // TODO
-            return;
-            //            throw new IllegalStateException("server must close session!");
-        }
+		Stanza stanza = (Stanza) message;
+		SessionContext session = extractSession(ioSession);
+		SessionStateHolder stateHolder = (SessionStateHolder) ioSession
+				.getAttribute(ATTRIBUTE_VYSPER_SESSIONSTATEHOLDER);
+		if (logger.isDebugEnabled()) {
+			logger.debug("processing stanza {} using {}", DenseStanzaLogRenderer.render(stanza),
+					serverRuntimeContext.getStanzaProcessor());
+		}
+		serverRuntimeContext.getStanzaProcessor().processStanza(serverRuntimeContext, session, stanza, stateHolder);
+	}
 
-        throw new IllegalArgumentException("xmpp handler only accepts Stanza-typed messages, but received type "
-                + message.getClass());
-    }
+	private void messageReceivedNoStanza(IoSession ioSession, Object message) {
+		if (message == SslFilter.SESSION_SECURED) {
+			SessionContext session = extractSession(ioSession);
+			SessionStateHolder stateHolder = (SessionStateHolder) ioSession
+					.getAttribute(ATTRIBUTE_VYSPER_SESSIONSTATEHOLDER);
+			serverRuntimeContext.getStanzaProcessor().processTLSEstablished(session, stateHolder);
+			return;
+		} else if (message == SslFilter.SESSION_UNSECURED) {
+			// TODO
+			return;
+			// throw new IllegalStateException("server must close session!");
+		}
 
-    private SessionContext extractSession(IoSession ioSession) {
-        return (SessionContext) ioSession.getAttribute(ATTRIBUTE_VYSPER_SESSION);
-    }
+		throw new IllegalArgumentException(
+				"xmpp handler only accepts Stanza-typed messages, but received type " + message.getClass());
+	}
 
-    public void messageSent(IoSession ioSession, Object o) throws Exception {
-        // TODO implement
-    }
+	private SessionContext extractSession(IoSession ioSession) {
+		return (SessionContext) ioSession.getAttribute(ATTRIBUTE_VYSPER_SESSION);
+	}
 
-    public void sessionCreated(IoSession ioSession) throws Exception {
-        SessionStateHolder stateHolder = new SessionStateHolder();
-        SessionContext sessionContext = new MinaBackedSessionContext(serverRuntimeContext, stateHolder, ioSession, endpointType);
-        
-        ioSession.setAttribute(ATTRIBUTE_VYSPER_SESSION, sessionContext);
-        ioSession.setAttribute(ATTRIBUTE_VYSPER_SESSIONSTATEHOLDER, stateHolder);
-        
-        ((DefaultServerRuntimeContext)serverRuntimeContext).sessionCreated(sessionContext);
-    }
+	public void messageSent(IoSession ioSession, Object o) throws Exception {
+		// TODO implement
+	}
 
-    public void sessionOpened(IoSession ioSession) throws Exception {
-        logger.info("new session from {} has been opened", ioSession.getRemoteAddress());
-    }
+	public void sessionCreated(IoSession ioSession) throws Exception {
+		SessionStateHolder stateHolder = new SessionStateHolder();
+		SessionContext sessionContext = new MinaBackedSessionContext(serverRuntimeContext, stateHolder, ioSession,
+				endpointType);
 
-    public void sessionClosed(IoSession ioSession) throws Exception {
-        SessionContext sessionContext = extractSession(ioSession);
-        String sessionId = "UNKNOWN";
-        if (sessionContext != null) {
-            sessionId = sessionContext.getSessionId();
-            sessionContext.endSession(SessionContext.SessionTerminationCause.CONNECTION_ABORT);
-            
-            ((DefaultServerRuntimeContext)serverRuntimeContext).sessionClosed(sessionContext);
-        }
-        
-        logger.info("session {} has been closed", sessionId);
-    }
+		ioSession.setAttribute(ATTRIBUTE_VYSPER_SESSION, sessionContext);
+		ioSession.setAttribute(ATTRIBUTE_VYSPER_SESSIONSTATEHOLDER, stateHolder);
 
-    public void sessionIdle(IoSession ioSession, IdleStatus idleStatus) throws Exception {
-        logger.debug("session {} is idle", ((SessionContext) ioSession.getAttribute(ATTRIBUTE_VYSPER_SESSION))
-                .getSessionId());
-    }
+		((DefaultServerRuntimeContext) serverRuntimeContext).sessionCreated(sessionContext);
+	}
 
-    public void exceptionCaught(IoSession ioSession, Throwable throwable) throws Exception {
-        SessionContext sessionContext = extractSession(ioSession);
+	public void sessionOpened(IoSession ioSession) throws Exception {
+		logger.info("new session from {} has been opened", ioSession.getRemoteAddress());
+	}
 
-        Stanza errorStanza;
-        if(throwable.getCause() != null && throwable.getCause() instanceof SAXParseException) {
-            logger.info("Client sent not well-formed XML, closing session: {}", throwable);
-            errorStanza = ServerErrorResponses.getStreamError(StreamErrorCondition.XML_NOT_WELL_FORMED,
-                    sessionContext.getXMLLang(), "Stanza not well-formed", null);
-        } else if(throwable instanceof WriteToClosedSessionException) {
-            // ignore
-            return;
-        } else {
-            logger.warn("error caught on transportation layer: {}", throwable);
-            errorStanza = ServerErrorResponses.getStreamError(StreamErrorCondition.UNDEFINED_CONDITION,
-                    sessionContext.getXMLLang(), "Unknown error", null);
+	public void sessionClosed(IoSession ioSession) throws Exception {
+		SessionContext sessionContext = extractSession(ioSession);
+		String sessionId = "UNKNOWN";
+		if (sessionContext != null) {
+			sessionId = sessionContext.getSessionId();
+			sessionContext.endSession(SessionContext.SessionTerminationCause.CONNECTION_ABORT);
 
-        }
-        sessionContext.getResponseWriter().write(errorStanza);
-        sessionContext.endSession(SessionContext.SessionTerminationCause.STREAM_ERROR);
-    }
+			((DefaultServerRuntimeContext) serverRuntimeContext).sessionClosed(sessionContext);
+		}
+
+		logger.info("session {} has been closed", sessionId);
+	}
+
+	public void sessionIdle(IoSession ioSession, IdleStatus idleStatus) throws Exception {
+		logger.debug("session {} is idle",
+				((SessionContext) ioSession.getAttribute(ATTRIBUTE_VYSPER_SESSION)).getSessionId());
+	}
+
+	public void exceptionCaught(IoSession ioSession, Throwable throwable) throws Exception {
+		SessionContext sessionContext = extractSession(ioSession);
+
+		Stanza errorStanza;
+		if (throwable.getCause() != null && throwable.getCause() instanceof SAXParseException) {
+			logger.info("Client sent not well-formed XML, closing session: {}", throwable);
+			errorStanza = ServerErrorResponses.getStreamError(StreamErrorCondition.XML_NOT_WELL_FORMED,
+					sessionContext.getXMLLang(), "Stanza not well-formed", null);
+		} else if (throwable instanceof WriteToClosedSessionException) {
+			// ignore
+			return;
+		} else {
+			logger.warn("error caught on transportation layer: {}", throwable);
+			errorStanza = ServerErrorResponses.getStreamError(StreamErrorCondition.UNDEFINED_CONDITION,
+					sessionContext.getXMLLang(), "Unknown error", null);
+
+		}
+		sessionContext.getResponseWriter().write(errorStanza);
+		sessionContext.endSession(SessionContext.SessionTerminationCause.STREAM_ERROR);
+	}
 }

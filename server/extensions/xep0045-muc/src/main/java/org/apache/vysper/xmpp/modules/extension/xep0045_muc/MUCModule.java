@@ -239,5 +239,6 @@ public class MUCModule extends DefaultDiscoAwareModule implements Component, Com
     @Override
     protected void addHandlerDictionaries(List<HandlerDictionary> dictionary) {
         dictionary.add(new NamespaceHandlerDictionary(NamespaceURIs.XEP0045_MUC_OWNER, new MUCIqOwnerHandler(conference)));
+        dictionary.add(new NamespaceHandlerDictionary(NamespaceURIs.XEP0045_MUC_ADMIN, new MUCIqAdminHandler(conference)));
     }
 }

@@ -26,6 +26,8 @@ import org.apache.vysper.xmpp.stanza.IQStanza;
 import org.apache.vysper.xmpp.stanza.Stanza;
 import org.apache.vysper.xmpp.uuid.JVMBuiltinUUIDGenerator;
 import org.apache.vysper.xmpp.uuid.UUIDGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This abstract class is the superclass of all pubsub (and related) handlers. It is responsible for correctly verifying whether a
@@ -35,6 +37,8 @@ import org.apache.vysper.xmpp.uuid.UUIDGenerator;
  */
 public abstract class AbstractPublishSubscribeIQHandler extends DefaultIQHandler {
 
+	private static final Logger logger = LoggerFactory.getLogger(AbstractPublishSubscribeIQHandler.class);
+	
     // one ErrorStanzaGenerator available for all subclasses
     protected ErrorStanzaGenerator errorStanzaGenerator = null;
 
@@ -75,8 +79,12 @@ public abstract class AbstractPublishSubscribeIQHandler extends DefaultIQHandler
      */
     @Override
     protected boolean verifyInnerElement(Stanza stanza) {
-        return verifyInnerElementWorker(stanza, "pubsub")
+        boolean pubsubElementFound = verifyInnerElementWorker(stanza, "pubsub")
                 && verifySingleElementParameter(stanza.getFirstInnerElement(), getWorkerElement());
+        if (pubsubElementFound) {
+        	logger.debug("{} has found pubsub and {}.", getClass().getName(), getWorkerElement()); 
+        }
+        return pubsubElementFound;
     }
 
     /**

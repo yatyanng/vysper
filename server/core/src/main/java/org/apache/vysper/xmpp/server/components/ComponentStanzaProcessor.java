@@ -65,6 +65,7 @@ public class ComponentStanzaProcessor implements StanzaProcessor {
         if (xmppStanza == null)
             throw new RuntimeException("cannot process only: IQ, message or presence");
 
+        logger.debug("Getting Component Handler for stanza {}", xmppStanza);
         StanzaHandler stanzaHandler = componentStanzaHandlerLookup.getHandler(xmppStanza);
 
         if (stanzaHandler == null) {

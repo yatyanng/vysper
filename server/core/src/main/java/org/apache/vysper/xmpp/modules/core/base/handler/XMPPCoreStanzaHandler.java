@@ -44,11 +44,14 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class XMPPCoreStanzaHandler implements StanzaHandler {
 
-    final static Logger logger = LoggerFactory.getLogger(XMPPCoreStanzaHandler.class);
+	private static final Logger logger = LoggerFactory.getLogger(XMPPCoreStanzaHandler.class);
 
     public boolean verify(Stanza stanza) {
         boolean typeVerified = verifyType(stanza);
         boolean namespaceVerified = verifyNamespace(stanza);
+        if (typeVerified && namespaceVerified) {
+        	logger.debug("{} will further verify {}.", getClass().getName(), stanza); 
+        }
         return typeVerified && namespaceVerified;
     }
 

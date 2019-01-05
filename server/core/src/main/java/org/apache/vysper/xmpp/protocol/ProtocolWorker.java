@@ -49,182 +49,186 @@ import org.slf4j.LoggerFactory;
 
 /**
  * responsible for high-level XMPP protocol logic for client-server sessions
- * determines start, end and jabber conditions.
- * reads the stream and cuts it into stanzas,
- * holds state and invokes stanza execution,
- * separates stream reading from actual execution.
- * stateless.
+ * determines start, end and jabber conditions. reads the stream and cuts it
+ * into stanzas, holds state and invokes stanza execution, separates stream
+ * reading from actual execution. stateless.
  *
  * @author The Apache MINA Project (dev@mina.apache.org)
  */
 public class ProtocolWorker implements StanzaProcessor {
 
-    final Logger logger = LoggerFactory.getLogger(ProtocolWorker.class);
+	private static final Logger logger = LoggerFactory.getLogger(ProtocolWorker.class);
 
-    private final Map<SessionState, StateAwareProtocolWorker> stateWorker = new HashMap<SessionState, StateAwareProtocolWorker>();
+	private final Map<SessionState, StateAwareProtocolWorker> stateWorker = new HashMap<SessionState, StateAwareProtocolWorker>();
 
-    private final ResponseWriter responseWriter = new ResponseWriter();
+	private final ResponseWriter responseWriter = new ResponseWriter();
 
-    public ProtocolWorker() {
+	public ProtocolWorker() {
 
-        stateWorker.put(SessionState.UNCONNECTED, new UnconnectedProtocolWorker());
-        stateWorker.put(SessionState.INITIATED, new InitiatedProtocolWorker());
-        stateWorker.put(SessionState.STARTED, new StartedProtocolWorker());
-        stateWorker.put(SessionState.ENCRYPTION_STARTED, new EncryptionStartedProtocolWorker());
-        stateWorker.put(SessionState.ENCRYPTED, new EncryptedProtocolWorker());
-        stateWorker.put(SessionState.AUTHENTICATED, new AuthenticatedProtocolWorker());
-        stateWorker.put(SessionState.ENDED, new EndOrClosedProtocolWorker());
-        stateWorker.put(SessionState.CLOSED, new EndOrClosedProtocolWorker());
-    }
+		stateWorker.put(SessionState.UNCONNECTED, new UnconnectedProtocolWorker());
+		stateWorker.put(SessionState.INITIATED, new InitiatedProtocolWorker());
+		stateWorker.put(SessionState.STARTED, new StartedProtocolWorker());
+		stateWorker.put(SessionState.ENCRYPTION_STARTED, new EncryptionStartedProtocolWorker());
+		stateWorker.put(SessionState.ENCRYPTED, new EncryptedProtocolWorker());
+		stateWorker.put(SessionState.AUTHENTICATED, new AuthenticatedProtocolWorker());
+		stateWorker.put(SessionState.ENDED, new EndOrClosedProtocolWorker());
+		stateWorker.put(SessionState.CLOSED, new EndOrClosedProtocolWorker());
+	}
 
-    /**
-     * executes the handler for a stanza, handles Protocol exceptions.
-     * also writes a response, if the handler implements ResponseStanzaContainer
-     * @param serverRuntimeContext
-     * @param sessionContext
-     * @param stanza
-     * @param sessionStateHolder
-     */
-    public void processStanza(ServerRuntimeContext serverRuntimeContext, SessionContext sessionContext, Stanza stanza,
-            SessionStateHolder sessionStateHolder) {
-        if (stanza == null)
-            throw new RuntimeException("cannot process NULL stanzas");
+	/**
+	 * executes the handler for a stanza, handles Protocol exceptions. also writes a
+	 * response, if the handler implements ResponseStanzaContainer
+	 * 
+	 * @param serverRuntimeContext
+	 * @param sessionContext
+	 * @param stanza
+	 * @param sessionStateHolder
+	 */
+	public void processStanza(ServerRuntimeContext serverRuntimeContext, SessionContext sessionContext, Stanza stanza,
+			SessionStateHolder sessionStateHolder) {
+		if (stanza == null)
+			throw new RuntimeException("cannot process NULL stanzas");
 
-        StanzaHandler stanzaHandler = serverRuntimeContext.getHandler(stanza);
-        if (stanzaHandler == null) {
-            responseWriter.handleUnsupportedStanzaType(sessionContext, stanza);
-            return;
-        }
-        
-        if (sessionContext == null && stanzaHandler.isSessionRequired()) {
-            throw new IllegalStateException("handler requires session context");
-        }
+		StanzaHandler stanzaHandler = serverRuntimeContext.getHandler(stanza);
+		if (stanzaHandler == null) {
+			responseWriter.handleUnsupportedStanzaType(sessionContext, stanza);
+			return;
+		}
+		logger.debug("Stanza {} is being handled by {}", stanza,
+				stanzaHandler.getClass().getName());
+		
+		if (sessionContext == null && stanzaHandler.isSessionRequired()) {
+			throw new IllegalStateException("handler requires session context");
+		}
 
-        StateAwareProtocolWorker stateAwareProtocolWorker = stateWorker.get(sessionContext.getState());
-        if (stateAwareProtocolWorker == null) {
-            throw new IllegalStateException("no protocol worker for state " + sessionContext.getState().toString());
-        }
+		StateAwareProtocolWorker stateAwareProtocolWorker = stateWorker.get(sessionContext.getState());
+		if (stateAwareProtocolWorker == null) {
+			throw new IllegalStateException("no protocol worker for state " + sessionContext.getState().toString());
+		}
 
-        XMPPCoreStanza coreStanza = XMPPCoreStanza.getWrapper(stanza);
-        if(coreStanza != null) {
-            // is a core stanza, must match session mode (e.g. only messages in 
-            // jabber:client namespace sent in C2S session)
-            if(!coreStanza.isValidForMode(sessionContext.getSessionMode())) {
-                responseWriter.handleUnsupportedStanzaType(sessionContext, stanza);
-                return;
-            }
-        }
+		XMPPCoreStanza coreStanza = XMPPCoreStanza.getWrapper(stanza);
+		if (coreStanza != null) {
+			// is a core stanza, must match session mode (e.g. only messages in
+			// jabber:client namespace sent in C2S session)
+			if (!coreStanza.isValidForMode(sessionContext.getSessionMode())) {
+				responseWriter.handleUnsupportedStanzaType(sessionContext, stanza);
+				return;
+			}
+		}
 
-        // check as of RFC3920/4.3:
-        if (sessionStateHolder.getState() != SessionState.AUTHENTICATED) {
-            // is not authenticated...
-            if (coreStanza != null
-                    && !(stanzaHandler instanceof InBandRegistrationHandler)) {
-                // ... and is a IQ/PRESENCE/MESSAGE stanza!
-                // In-band registration uses IQ stanzas before the stream is authenticated
-                responseWriter.handleNotAuthorized(sessionContext, stanza);
-                return;
-            }
-        }
+		// check as of RFC3920/4.3:
+		if (sessionStateHolder.getState() != SessionState.AUTHENTICATED) {
+			// is not authenticated...
+			if (coreStanza != null && !(stanzaHandler instanceof InBandRegistrationHandler)) {
+				// ... and is a IQ/PRESENCE/MESSAGE stanza!
+				// In-band registration uses IQ stanzas before the stream is authenticated
+				responseWriter.handleNotAuthorized(sessionContext, stanza);
+				return;
+			}
+		}
 
-        Entity from = stanza.getFrom();
-        if(sessionContext.isSessionMode(SessionMode.SERVER_2_SERVER)) {
-            if(coreStanza != null) {
-                // stanza must come from the origin server
-                if(from == null) {
-                    Stanza errorStanza = ServerErrorResponses.getStanzaError(StanzaErrorCondition.UNKNOWN_SENDER,
-                            coreStanza, StanzaErrorType.MODIFY, "Missing from attribute", null, null);
-                    ResponseWriter.writeResponse(sessionContext, errorStanza);
-                    return;
-                } else if(!from.getDomain().equals(sessionContext.getInitiatingEntity().getDomain())) {
-                    // make sure the from attribute refers to the correct remote server
-                    
-                        Stanza errorStanza = ServerErrorResponses.getStanzaError(StanzaErrorCondition.UNKNOWN_SENDER,
-                                coreStanza, StanzaErrorType.MODIFY, "Incorrect from attribute", null, null);
-                        ResponseWriter.writeResponse(sessionContext, errorStanza); 
-                        return;
-                }
-                
-                Entity to = stanza.getTo();
-                if(to == null) {
-                    // TODO what's the appropriate error? StreamErrorCondition.IMPROPER_ADDRESSING?
-                    Stanza errorStanza = ServerErrorResponses.getStanzaError(StanzaErrorCondition.BAD_REQUEST,
-                            coreStanza, StanzaErrorType.MODIFY, "Missing to attribute", null, null);
-                    ResponseWriter.writeResponse(sessionContext, errorStanza);
-                    return;                    
-                } else if(!to.getDomain().equals(serverRuntimeContext.getServerEntity().getDomain())) {
-                    // TODO what's the appropriate error? StreamErrorCondition.IMPROPER_ADDRESSING?
-                    Stanza errorStanza = ServerErrorResponses.getStanzaError(StanzaErrorCondition.BAD_REQUEST,
-                            coreStanza, StanzaErrorType.MODIFY, "Invalid to attribute", null, null);
-                    ResponseWriter.writeResponse(sessionContext, errorStanza);
-                    return;                    
-                    
-                }
+		Entity from = stanza.getFrom();
+		if (sessionContext.isSessionMode(SessionMode.SERVER_2_SERVER)) {
+			if (coreStanza != null) {
+				// stanza must come from the origin server
+				if (from == null) {
+					Stanza errorStanza = ServerErrorResponses.getStanzaError(StanzaErrorCondition.UNKNOWN_SENDER,
+							coreStanza, StanzaErrorType.MODIFY, "Missing from attribute", null, null);
+					ResponseWriter.writeResponse(sessionContext, errorStanza);
+					return;
+				} else if (!from.getDomain().equals(sessionContext.getInitiatingEntity().getDomain())) {
+					// make sure the from attribute refers to the correct remote server
 
-                // rewrite namespace
-                stanza = StanzaBuilder.rewriteNamespace(stanza, NamespaceURIs.JABBER_SERVER, NamespaceURIs.JABBER_CLIENT);
-            }                
-        } else if(sessionContext.isSessionMode(SessionMode.CLIENT_2_SERVER)) { 
-            // make sure that 'from' (if present) matches the bare authorized entity
-            // else respond with a stanza error 'unknown-sender'
-            // see rfc3920_draft-saintandre-rfc3920bis-04.txt#8.5.4
-            if (from != null && sessionContext.getInitiatingEntity() != null) {
-                Entity fromBare = from.getBareJID();
-                Entity initiatingEntity = sessionContext.getInitiatingEntity();
-                if (!initiatingEntity.equals(fromBare)) {
-                    responseWriter.handleWrongFromJID(sessionContext, stanza);
-                    return;
-                }
-            }
-            // make sure that there is a bound resource entry for that from's resource id attribute!
-            if (from != null && from.getResource() != null) {
-                List<String> boundResources = sessionContext.getServerRuntimeContext().getResourceRegistry()
-                        .getBoundResources(from, false);
-                if (boundResources.size() == 0) {
-                    responseWriter.handleWrongFromJID(sessionContext, stanza);
-                    return;
-                }
-            }
-            // make sure that there is a full from entity given in cases where more than one resource is bound
-            // in the same session.
-            // see rfc3920_draft-saintandre-rfc3920bis-04.txt#8.5.4
-            if (from != null && from.getResource() == null) {
-                List<String> boundResources = sessionContext.getServerRuntimeContext().getResourceRegistry()
-                        .getResourcesForSession(sessionContext);
-                if (boundResources.size() > 1) {
-                    responseWriter.handleWrongFromJID(sessionContext, stanza);
-                    return;
-                }
-            }
-        } else if(sessionContext.isSessionMode(SessionMode.COMPONENT_ACCEPT)) {
-            // TODO make sure that "from" is from the component
-            
-            // rewrite namespace
-            if(coreStanza != null) {
-                stanza = StanzaBuilder.rewriteNamespace(stanza, NamespaceURIs.JABBER_COMPONENT_ACCEPT, NamespaceURIs.JABBER_CLIENT);
-            }
-        }
-        
-        try {
-            stateAwareProtocolWorker.processStanza(sessionContext, sessionStateHolder, stanza, stanzaHandler);
-        } catch (Exception e) {
-            logger.error("error executing handler {} with stanza {}", stanzaHandler.getClass().getName(),
-                    DenseStanzaLogRenderer.render(stanza));
-            logger.debug("error executing handler exception: ", e);
-        }
-    }
+					Stanza errorStanza = ServerErrorResponses.getStanzaError(StanzaErrorCondition.UNKNOWN_SENDER,
+							coreStanza, StanzaErrorType.MODIFY, "Incorrect from attribute", null, null);
+					ResponseWriter.writeResponse(sessionContext, errorStanza);
+					return;
+				}
 
-    public void processTLSEstablished(SessionContext sessionContext, SessionStateHolder sessionStateHolder) {
-        processTLSEstablishedInternal(sessionContext, sessionStateHolder, responseWriter);
-    }
+				Entity to = stanza.getTo();
+				if (to == null) {
+					// TODO what's the appropriate error? StreamErrorCondition.IMPROPER_ADDRESSING?
+					Stanza errorStanza = ServerErrorResponses.getStanzaError(StanzaErrorCondition.BAD_REQUEST,
+							coreStanza, StanzaErrorType.MODIFY, "Missing to attribute", null, null);
+					ResponseWriter.writeResponse(sessionContext, errorStanza);
+					return;
+				} else if (!to.getDomain().equals(serverRuntimeContext.getServerEntity().getDomain())) {
+					// TODO what's the appropriate error? StreamErrorCondition.IMPROPER_ADDRESSING?
+					Stanza errorStanza = ServerErrorResponses.getStanzaError(StanzaErrorCondition.BAD_REQUEST,
+							coreStanza, StanzaErrorType.MODIFY, "Invalid to attribute", null, null);
+					ResponseWriter.writeResponse(sessionContext, errorStanza);
+					return;
 
-    static void processTLSEstablishedInternal(SessionContext sessionContext, SessionStateHolder sessionStateHolder,
-            ResponseWriter responseWriter) {
-        if (sessionContext.getState() != SessionState.ENCRYPTION_STARTED) {
-            responseWriter.handleProtocolError(new TLSException(), sessionContext, null);
-            return;
-        }
-        sessionStateHolder.setState(SessionState.ENCRYPTED);
-        sessionContext.setIsReopeningXMLStream();
-    }
+				}
+
+				// rewrite namespace
+				stanza = StanzaBuilder.rewriteNamespace(stanza, NamespaceURIs.JABBER_SERVER,
+						NamespaceURIs.JABBER_CLIENT);
+			}
+		} else if (sessionContext.isSessionMode(SessionMode.CLIENT_2_SERVER)) {
+			// make sure that 'from' (if present) matches the bare authorized entity
+			// else respond with a stanza error 'unknown-sender'
+			// see rfc3920_draft-saintandre-rfc3920bis-04.txt#8.5.4
+			if (from != null && sessionContext.getInitiatingEntity() != null) {
+				Entity fromBare = from.getBareJID();
+				Entity initiatingEntity = sessionContext.getInitiatingEntity();
+				if (!initiatingEntity.equals(fromBare)) {
+					responseWriter.handleWrongFromJID(sessionContext, stanza);
+					return;
+				}
+			}
+			// make sure that there is a bound resource entry for that from's resource id
+			// attribute!
+			if (from != null && from.getResource() != null) {
+				List<String> boundResources = sessionContext.getServerRuntimeContext().getResourceRegistry()
+						.getBoundResources(from, false);
+				if (boundResources.size() == 0) {
+					responseWriter.handleWrongFromJID(sessionContext, stanza);
+					return;
+				}
+			}
+			// make sure that there is a full from entity given in cases where more than one
+			// resource is bound
+			// in the same session.
+			// see rfc3920_draft-saintandre-rfc3920bis-04.txt#8.5.4
+			if (from != null && from.getResource() == null) {
+				List<String> boundResources = sessionContext.getServerRuntimeContext().getResourceRegistry()
+						.getResourcesForSession(sessionContext);
+				if (boundResources.size() > 1) {
+					responseWriter.handleWrongFromJID(sessionContext, stanza);
+					return;
+				}
+			}
+		} else if (sessionContext.isSessionMode(SessionMode.COMPONENT_ACCEPT)) {
+			// TODO make sure that "from" is from the component
+
+			// rewrite namespace
+			if (coreStanza != null) {
+				stanza = StanzaBuilder.rewriteNamespace(stanza, NamespaceURIs.JABBER_COMPONENT_ACCEPT,
+						NamespaceURIs.JABBER_CLIENT);
+			}
+		}
+
+		try {
+			stateAwareProtocolWorker.processStanza(sessionContext, sessionStateHolder, stanza, stanzaHandler);
+		} catch (Exception e) {
+			logger.error("error executing handler {} with stanza {}", stanzaHandler.getClass().getName(),
+					DenseStanzaLogRenderer.render(stanza));
+			logger.debug("error executing handler exception: ", e);
+		}
+	}
+
+	public void processTLSEstablished(SessionContext sessionContext, SessionStateHolder sessionStateHolder) {
+		processTLSEstablishedInternal(sessionContext, sessionStateHolder, responseWriter);
+	}
+
+	static void processTLSEstablishedInternal(SessionContext sessionContext, SessionStateHolder sessionStateHolder,
+			ResponseWriter responseWriter) {
+		if (sessionContext.getState() != SessionState.ENCRYPTION_STARTED) {
+			ResponseWriter.handleProtocolError(new TLSException(), sessionContext, null);
+			return;
+		}
+		sessionStateHolder.setState(SessionState.ENCRYPTED);
+		sessionContext.setIsReopeningXMLStream();
+	}
 }

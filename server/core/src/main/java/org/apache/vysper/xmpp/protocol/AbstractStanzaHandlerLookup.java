@@ -21,32 +21,38 @@ package org.apache.vysper.xmpp.protocol;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.apache.vysper.xml.fragment.XMLElement;
 import org.apache.vysper.xmpp.stanza.Stanza;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * basic facility to collect and query a set of namespace-based handlers 
+ * basic facility to collect and query a set of namespace-based handlers
  */
 public abstract class AbstractStanzaHandlerLookup {
-    protected List<HandlerDictionary> namespaceDictionaries = new ArrayList<HandlerDictionary>();
 
-    public void addDictionary(HandlerDictionary namespaceHandlerDictionary) {
-        namespaceDictionaries.add(namespaceHandlerDictionary);
-    }
+	private static final Logger logger = LoggerFactory.getLogger(AbstractStanzaHandlerLookup.class);
 
-    public abstract StanzaHandler getHandler(Stanza stanza);
+	protected List<HandlerDictionary> namespaceDictionaries = new ArrayList<HandlerDictionary>();
 
-    /**
-     * tries to find the handler by trying
-     * 1. value of xmlElement's XMLNS attribute, if unique
-     * 2. xmlElements namespace, if the element name has a namespace prefix
-     */
-    protected StanzaHandler getHandlerForElement(Stanza stanza, XMLElement xmlElement) {
-        for(HandlerDictionary dictionary : namespaceDictionaries) {
-            StanzaHandler stanzaHandler = dictionary.get(stanza);
-            if(stanzaHandler != null) return stanzaHandler;
-        }
-        return null;
-    }
+	public void addDictionary(HandlerDictionary namespaceHandlerDictionary) {
+		namespaceDictionaries.add(namespaceHandlerDictionary);
+	}
+
+	public abstract StanzaHandler getHandler(Stanza stanza);
+
+	/**
+	 * tries to find the handler by trying 1. value of xmlElement's XMLNS attribute,
+	 * if unique 2. xmlElements namespace, if the element name has a namespace
+	 * prefix
+	 */
+	protected StanzaHandler getHandlerForElement(Stanza stanza, XMLElement xmlElement) {
+		List<StanzaHandler> matchedHandlers = namespaceDictionaries.stream()
+				.map(dictionary -> dictionary.get(stanza)).filter(Objects::nonNull).collect(Collectors.toList());
+		logger.debug("For stanza {}, the matched handler list is {}", stanza, matchedHandlers);
+		return matchedHandlers.stream().findFirst().orElse(null);
+	}
 }

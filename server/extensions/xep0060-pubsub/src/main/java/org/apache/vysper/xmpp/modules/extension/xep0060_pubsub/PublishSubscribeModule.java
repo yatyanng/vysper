@@ -45,6 +45,7 @@ import org.apache.vysper.xmpp.modules.servicediscovery.management.Item;
 import org.apache.vysper.xmpp.modules.servicediscovery.management.ItemRequestListener;
 import org.apache.vysper.xmpp.modules.servicediscovery.management.ServerInfoRequestListener;
 import org.apache.vysper.xmpp.modules.servicediscovery.management.ServiceDiscoveryRequestException;
+import org.apache.vysper.xmpp.protocol.HandlerDictionary;
 import org.apache.vysper.xmpp.protocol.NamespaceHandlerDictionary;
 import org.apache.vysper.xmpp.protocol.NamespaceURIs;
 import org.apache.vysper.xmpp.protocol.StanzaHandler;
@@ -264,5 +265,24 @@ public class PublishSubscribeModule extends DefaultDiscoAwareModule implements C
 
     public StanzaProcessor getStanzaProcessor() {
         return stanzaProcessor;
+    }
+    
+    @Override
+    protected void addHandlerDictionaries(List<HandlerDictionary> dictionary) {
+    	ArrayList<StanzaHandler> pubsubHandlers = new ArrayList<StanzaHandler>();
+        pubsubHandlers.add(new PubSubSubscribeHandler(serviceConfiguration));
+        pubsubHandlers.add(new PubSubUnsubscribeHandler(serviceConfiguration));
+        pubsubHandlers.add(new PubSubPublishHandler(serviceConfiguration));
+        pubsubHandlers.add(new PubSubCreateNodeHandler(serviceConfiguration));
+        pubsubHandlers.add(new PubSubRetrieveSubscriptionsHandler(serviceConfiguration));
+        pubsubHandlers.add(new PubSubRetrieveAffiliationsHandler(serviceConfiguration));
+        dictionary.add(new NamespaceHandlerDictionary(NamespaceURIs.XEP0060_PUBSUB, pubsubHandlers));
+        
+        ArrayList<StanzaHandler> pubsubOwnerHandlers = new ArrayList<StanzaHandler>();
+        pubsubOwnerHandlers.add(new PubSubOwnerConfigureNodeHandler(serviceConfiguration));
+        pubsubOwnerHandlers.add(new PubSubOwnerDeleteNodeHandler(serviceConfiguration));
+        dictionary.add(new NamespaceHandlerDictionary(NamespaceURIs.XEP0060_PUBSUB_OWNER, pubsubOwnerHandlers));
+        
+        dictionary.add(new NamespaceHandlerDictionary(NamespaceURIs.XEP0060_PUBSUB_EVENT, new MessageHandler()));
     }
 }
