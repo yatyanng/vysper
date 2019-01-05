@@ -51,7 +51,6 @@ import org.apache.vysper.xmpp.server.SessionContext;
 import org.apache.vysper.xmpp.stanza.PresenceStanza;
 import org.apache.vysper.xmpp.stanza.PresenceStanzaType;
 import org.apache.vysper.xmpp.stanza.Stanza;
-import org.apache.vysper.xmpp.stanza.XMPPCoreStanzaVerifier;
 import org.apache.vysper.xmpp.state.resourcebinding.ResourceRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +80,7 @@ public class PresenceSubscriptionHandler extends AbstractPresenceSpecializedHand
         // or in case of multiple resources, use the from attribute or return an
         // error if the from attribute is not present.
         Entity initiatingEntity = sessionContext == null ? null : sessionContext.getInitiatingEntity();
-        XMPPCoreStanzaVerifier verifier = presenceStanza.getCoreVerifier();
+        //XMPPCoreStanzaVerifier verifier = presenceStanza.getCoreVerifier();
         ResourceRegistry registry = serverRuntimeContext.getResourceRegistry();
 
         PresenceStanzaType type = presenceStanza.getPresenceType();

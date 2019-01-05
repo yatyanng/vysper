@@ -60,13 +60,11 @@ public class RelayingIQHandler extends IQHandler {
 		}
 
 		RosterManager rosterManager = RosterManagerUtils.getRosterInstance(serverRuntimeContext, sessionContext);
-		logger.debug("{} is outbound: {}", stanza.getID(), outboundStanza);
+		logger.debug("Stanza {} is outbound: {}", stanza.getID(), outboundStanza);
 		if (outboundStanza) {
 			try {
-
 				boolean toComponent = EntityUtils.isAddressingServerComponent(to,
 						serverRuntimeContext.getServerEntity());
-
 				Entity from = stanza.getFrom();
 				if (from == null || !from.isResourceSet()) {
 					from = new EntityImpl(sessionContext.getInitiatingEntity(),
@@ -92,33 +90,50 @@ public class RelayingIQHandler extends IQHandler {
 				serverRuntimeContext.getStanzaRelay().relay(to, forwardedStanza,
 						new ReturnErrorToSenderFailureStrategy(serverRuntimeContext.getStanzaRelay()));
 			} catch (DeliveryException e) {
-				// TODO how to handle this exception?
-			}
-		} else {
-			// write inbound stanza to the user
-
-			Entity from = stanza.getFrom();
-
-			boolean fromComponent = (from != null)
-					&& EntityUtils.isAddressingServerComponent(from, serverRuntimeContext.getServerEntity());
-
-			// determine if 'from' is a component or a matching subscription...
-			boolean isToContact = false;
-			logger.debug("{} is component: {}", from.getBareJID(), fromComponent);
-			if (!fromComponent) {
-				try {
-					isToContact = rosterManager.retrieve(to.getBareJID()).getEntry(from.getBareJID()).hasTo();
-				} catch (Exception e) {
-					logger.error("An error has occured when relaying from "+from.getBareJID()+" to "+to.getBareJID(), e);
-					isToContact = false;
-				}
-			}
-			// ...otherwise relaying is denied
-			if (!isToContact && !fromComponent) {
+				logger.error("cannot deliver outbound message", e);
 				return ServerErrorResponses.getStanzaError(StanzaErrorCondition.SERVICE_UNAVAILABLE, stanza,
 						StanzaErrorType.CANCEL, null, null, null);
 			}
-			sessionContext.getResponseWriter().write(stanza);
+		} else {
+			try {
+				// write inbound stanza to the user
+				Entity from = stanza.getFrom();
+				boolean fromComponent = (from != null)
+						&& EntityUtils.isAddressingServerComponent(from, serverRuntimeContext.getServerEntity());
+
+				// determine if 'from' is a component or a matching subscription...
+				boolean isToContact = false;
+				logger.debug("In stanza {}, {} is a component: {}", stanza.getID(), from.getBareJID(), fromComponent);
+				if (!fromComponent) {
+					try {
+						isToContact = rosterManager.retrieve(to.getBareJID()).getEntry(from.getBareJID()).hasTo();
+					} catch (Exception e) {
+						logger.error("An error has occured when relaying from {} to {}", from.getBareJID(),
+								to.getBareJID(), e);
+						isToContact = false;
+					}
+				} else {
+					// See handleSet of BindIQHandler
+					SessionContext userSessionContext = serverRuntimeContext.getResourceRegistry()
+							.getSessionContext(to.getResource());
+					logger.debug("In stanza {}, target resource is {} and user session context is {}", stanza.getID(),
+							to.getResource(), userSessionContext);
+					if (userSessionContext != null) {
+						userSessionContext.getResponseWriter().write(stanza);
+					}
+					return null;
+				}
+				// ...otherwise relaying is denied
+				if (!isToContact && !fromComponent) {
+					return ServerErrorResponses.getStanzaError(StanzaErrorCondition.SERVICE_UNAVAILABLE, stanza,
+							StanzaErrorType.CANCEL, null, null, null);
+				}
+				sessionContext.getResponseWriter().write(stanza);
+			} catch (Exception e) {
+				logger.error("cannot deliver inbound message", e);
+				return ServerErrorResponses.getStanzaError(StanzaErrorCondition.SERVICE_UNAVAILABLE, stanza,
+						StanzaErrorType.CANCEL, null, null, null);
+			}
 		}
 		return null;
 	}

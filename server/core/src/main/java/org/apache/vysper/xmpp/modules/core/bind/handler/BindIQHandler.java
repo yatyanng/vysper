@@ -30,6 +30,8 @@ import org.apache.vysper.xmpp.stanza.IQStanzaType;
 import org.apache.vysper.xmpp.stanza.Stanza;
 import org.apache.vysper.xmpp.stanza.StanzaBuilder;
 import org.apache.vysper.xmpp.state.resourcebinding.BindException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * handles bind requests
@@ -38,51 +40,55 @@ import org.apache.vysper.xmpp.state.resourcebinding.BindException;
  */
 public class BindIQHandler extends DefaultIQHandler {
 
-    @Override
-    protected boolean verifyNamespace(Stanza stanza) {
-        return verifyInnerNamespace(stanza, NamespaceURIs.URN_IETF_PARAMS_XML_NS_XMPP_BIND);
-    }
+	private static final Logger logger = LoggerFactory.getLogger(BindIQHandler.class);
 
-    @Override
-    protected boolean verifyInnerElement(Stanza stanza) {
-        return verifyInnerElementWorker(stanza, "bind");
-    }
+	@Override
+	protected boolean verifyNamespace(Stanza stanza) {
+		return verifyInnerNamespace(stanza, NamespaceURIs.URN_IETF_PARAMS_XML_NS_XMPP_BIND);
+	}
 
-    @Override
-    protected Stanza handleSet(IQStanza stanza, ServerRuntimeContext serverRuntimeContext, SessionContext sessionContext) {
+	@Override
+	protected boolean verifyInnerElement(Stanza stanza) {
+		return verifyInnerElementWorker(stanza, "bind");
+	}
 
-        // As per RFC3920.7, the client may propose a resource id to the server:
-        //
-        // <iq type='set' id='bind_2'>
-        // <bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'>
-        //   <resource>someresource</resource>
-        // </bind>
-        // </iq>
-        //
-        // The client's proposed resource id is ignored by this server.
+	@Override
+	protected Stanza handleSet(IQStanza stanza, ServerRuntimeContext serverRuntimeContext,
+			SessionContext sessionContext) {
 
-        String resourceId = null;
-        try {
-            resourceId = sessionContext.bindResource();
-        } catch (BindException e) {
-            return bindError(stanza, sessionContext);
-        }
+		// As per RFC3920.7, the client may propose a resource id to the server:
+		//
+		// <iq type='set' id='bind_2'>
+		// <bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'>
+		// <resource>someresource</resource>
+		// </bind>
+		// </iq>
+		//
+		// The client's proposed resource id is ignored by this server.
 
-        Entity entity = new EntityImpl(sessionContext.getInitiatingEntity(), resourceId);
+		String resourceId = null;
+		try {
+			resourceId = sessionContext.bindResource();
+			logger.debug("session context {} is binded to resource {}", sessionContext, resourceId);
+		} catch (BindException e) {
+			return bindError(stanza, sessionContext);
+		}
 
-        StanzaBuilder stanzaBuilder = StanzaBuilder.createIQStanza(null, null, IQStanzaType.RESULT, stanza.getID())
-                .startInnerElement("bind", NamespaceURIs.URN_IETF_PARAMS_XML_NS_XMPP_BIND).startInnerElement("jid",
-                        NamespaceURIs.URN_IETF_PARAMS_XML_NS_XMPP_BIND).addText(entity.getFullQualifiedName())
-                .endInnerElement().endInnerElement();
+		Entity entity = new EntityImpl(sessionContext.getInitiatingEntity(), resourceId);
 
-        return stanzaBuilder.build();
-    }
+		StanzaBuilder stanzaBuilder = StanzaBuilder.createIQStanza(null, null, IQStanzaType.RESULT, stanza.getID())
+				.startInnerElement("bind", NamespaceURIs.URN_IETF_PARAMS_XML_NS_XMPP_BIND)
+				.startInnerElement("jid", NamespaceURIs.URN_IETF_PARAMS_XML_NS_XMPP_BIND)
+				.addText(entity.getFullQualifiedName()).endInnerElement().endInnerElement();
 
-    private Stanza bindError(IQStanza stanza, SessionContext sessionContext) {
-        StanzaBuilder stanzaBuilder = StanzaBuilder.createIQStanza(null, null, IQStanzaType.ERROR, stanza.getID())
-                .startInnerElement("error", NamespaceURIs.JABBER_CLIENT).addAttribute("type", "cancel")
-                .startInnerElement("not-allowed", NamespaceURIs.URN_IETF_PARAMS_XML_NS_XMPP_STANZAS).endInnerElement();
+		return stanzaBuilder.build();
+	}
 
-        return stanzaBuilder.build();
-    }
+	private Stanza bindError(IQStanza stanza, SessionContext sessionContext) {
+		StanzaBuilder stanzaBuilder = StanzaBuilder.createIQStanza(null, null, IQStanzaType.ERROR, stanza.getID())
+				.startInnerElement("error", NamespaceURIs.JABBER_CLIENT).addAttribute("type", "cancel")
+				.startInnerElement("not-allowed", NamespaceURIs.URN_IETF_PARAMS_XML_NS_XMPP_STANZAS).endInnerElement();
+
+		return stanzaBuilder.build();
+	}
 }

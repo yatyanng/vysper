@@ -82,10 +82,8 @@ public abstract class AbstractStateAwareProtocolWorker implements StateAwareProt
 
 	protected boolean isProcessingOutboundStanzas(SessionContext sessionContext, Stanza stanza) {
 		Entity from = stanza.getFrom();
-
 		boolean fromComponent = (from != null)
 				&& EntityUtils.isAddressingServerComponent(from, sessionContext.getServerRuntimeContext().getServerEntity());
-		
 		return !fromComponent;
 	}
 }

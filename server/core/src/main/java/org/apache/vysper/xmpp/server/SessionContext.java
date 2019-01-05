@@ -191,4 +191,11 @@ public interface SessionContext {
      */
     Object getAttribute(String key);
 
+    /**
+     * get a string which is the class name of the underlying i/o
+     * @return the name of the io session
+     */
+    default public String getIoSessionType() {
+		return null;
+	}
 }

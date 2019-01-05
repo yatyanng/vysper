@@ -171,7 +171,7 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
 
         Map<SubscriptionType, List<RosterItem>> itemMap = RosterUtils.getRosterItemsByState(rosterManager, user);
         List<RosterItem> item_FROM = itemMap.get(SubscriptionType.FROM);
-        List<RosterItem> item_TO = itemMap.get(SubscriptionType.TO);
+        //List<RosterItem> item_TO = itemMap.get(SubscriptionType.TO);
         List<RosterItem> item_BOTH = itemMap.get(SubscriptionType.BOTH);
 
         // broadcast presence from full JID to contacts

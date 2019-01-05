@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author The Apache MINA Project (dev@mina.apache.org)
  */
-public class MinaBackedSessionContext extends AbstractSessionContext implements StanzaWriter, IoFutureListener {
+public class MinaBackedSessionContext extends AbstractSessionContext implements StanzaWriter, IoFutureListener<IoFuture> {
 
     final Logger logger = LoggerFactory.getLogger(MinaBackedSessionContext.class);
 
@@ -63,6 +63,10 @@ public class MinaBackedSessionContext extends AbstractSessionContext implements 
         sessionStateHolder.setState(SessionState.INITIATED); // connection established
     }
 
+    public String getIoSessionType() {
+        return minaSession.getClass().getName();
+    }
+    
     public StanzaWriter getResponseWriter() {
         return this;
     }
@@ -93,7 +97,6 @@ public class MinaBackedSessionContext extends AbstractSessionContext implements 
         minaSession.setAttribute(SslFilter.USE_NOTIFICATION, Boolean.TRUE);
         minaSession.resumeWrite();
         minaSession.resumeRead();
-        
     }
 
     public void write(Stanza stanza) {
