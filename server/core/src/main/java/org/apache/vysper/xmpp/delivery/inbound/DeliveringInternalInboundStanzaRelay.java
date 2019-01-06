@@ -22,7 +22,6 @@ package org.apache.vysper.xmpp.delivery.inbound;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -97,7 +96,7 @@ public class DeliveringInternalInboundStanzaRelay implements StanzaRelay {
         this.serverEntity = serverEntity;
         this.resourceRegistry = resourceRegistry;
         this.accountVerification = accountVerification;
-        this.offlineStanzaReceiver =offlineStanzaReceiver;
+        this.offlineStanzaReceiver = offlineStanzaReceiver;
         int coreThreadCount = 10;
         int maxThreadCount = 20;
         int threadTimeoutSeconds = 2 * 60 * 1000;
@@ -111,7 +110,7 @@ public class DeliveringInternalInboundStanzaRelay implements StanzaRelay {
 
     public void relay(Entity receiver, Stanza stanza, DeliveryFailureStrategy deliveryFailureStrategy)
             throws DeliveryException {
-        Future<RelayResult> resultFuture = executor.submit(new Relay(receiver, stanza, deliveryFailureStrategy));
+        executor.submit(new Relay(receiver, stanza, deliveryFailureStrategy));
     }
 
     private class Relay implements Callable<RelayResult> {
@@ -127,18 +126,6 @@ public class DeliveringInternalInboundStanzaRelay implements StanzaRelay {
             this.receiver = receiver;
             this.stanza = stanza;
             this.deliveryFailureStrategy = deliveryFailureStrategy;
-        }
-
-        public Entity getReceiver() {
-            return receiver;
-        }
-
-        public Stanza getStanza() {
-            return stanza;
-        }
-
-        public DeliveryFailureStrategy getDeliveryFailureStrategy() {
-            return deliveryFailureStrategy;
         }
 
         public RelayResult call() {
@@ -183,7 +170,7 @@ public class DeliveringInternalInboundStanzaRelay implements StanzaRelay {
                         return new RelayResult(new ServiceNotAvailableException(
                                 "cannot retrieve component stanza processor for" + receiverDomain));
                     }
-
+                    logger.debug("internal-relay has selected component-stanza-processor {}", processor.getClass().getName());
                     processor.processStanza(serverRuntimeContext, null, stanza, null);
                     return new RelayResult();
                 }

@@ -106,7 +106,7 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
 
         PresenceStanzaType type = presenceStanza.getPresenceType();
         boolean available = PresenceStanzaType.isAvailable(type);
-
+        logger.debug("presence-type: {}, available: {}, outbound: {}", type, available, isOutboundStanza);
         if (isOutboundStanza) {
             Entity user = XMPPCoreStanzaHandler.extractUniqueSenderJID(presenceStanza, sessionContext);
             if (user == null) {
@@ -226,10 +226,11 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
             ServerRuntimeContext serverRuntimeContext, SessionContext sessionContext, RosterManager rosterManager,
             Entity user, ResourceRegistry registry) {
         boolean hasTo = presenceStanza.getCoreVerifier().attributePresent("to");
-        if (hasTo)
+        if (hasTo) {
+        	logger.debug("sending directed outbound-available presence from {} to {}", presenceStanza.getFrom(), presenceStanza.getTo());
             return handleOutboundDirectedPresence(presenceStanza, serverRuntimeContext, sessionContext, rosterManager,
                     user, registry, false);
-
+        }
         if (!user.isResourceSet())
             throw new RuntimeException("resource id not available");
         String resourceId = user.getResource();
@@ -340,16 +341,17 @@ public class PresenceAvailabilityHandler extends AbstractPresenceSpecializedHand
         } catch (Exception e) {
             isFromContact = false;
         }
-        boolean IsTOAvailable = !ResourceState.isAvailable(registry.getResourceState(from.getResource()));
+        boolean isToAvailable = !ResourceState.isAvailable(registry.getResourceState(from.getResource()));
 
         if (unvailable) {
             dpMap.remove(to);
         } else {
-            if (!isFromContact || !IsTOAvailable)
+            if (!isFromContact || !isToAvailable)
                 dpMap.add(to);
         }
 
         try {
+        	logger.debug("stanza relay type: {}", serverRuntimeContext.getStanzaRelay().getClass().getName());
             serverRuntimeContext.getStanzaRelay().relay(to, redirectDirectedStanza, new IgnoreFailureStrategy());
         } catch (DeliveryException e) {
             logger.warn("relaying directed presence failed. from = " + from + ", to = " + to);

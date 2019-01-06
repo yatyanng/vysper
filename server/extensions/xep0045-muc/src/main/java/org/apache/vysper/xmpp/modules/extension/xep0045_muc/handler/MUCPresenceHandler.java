@@ -128,6 +128,19 @@ public class MUCPresenceHandler extends DefaultPresenceHandler {
         }
     }
 
+    private XMLElement getInnerElement(XMLElement element, String childName) {
+        try {
+            XMLElement childElm = element.getSingleInnerElementsNamed(childName);
+            if (childElm != null) {
+                return childElm;
+            } else {
+                return null;
+            }
+        } catch (XMLSemanticError e) {
+            return null;
+        }
+    }
+    
     private Stanza available(PresenceStanza stanza, Entity roomJid, Entity newOccupantJid, String nick,
             ServerRuntimeContext serverRuntimeContext) {
 
@@ -148,8 +161,7 @@ public class MUCPresenceHandler extends DefaultPresenceHandler {
             if (nick.equals(occupant.getNick())) {
                 // nick unchanged, change show and status
                 for (Occupant receiver : room.getOccupants()) {
-                    sendChangeShowStatus(occupant, receiver, room, getInnerElementText(stanza, "show"),
-                            getInnerElementText(stanza, "status"), serverRuntimeContext);
+                    sendChangeShowStatus(occupant, receiver, room, stanza, serverRuntimeContext);
                 }
             } else {
                 if (room.isInRoom(nick)) {
@@ -372,19 +384,25 @@ public class MUCPresenceHandler extends DefaultPresenceHandler {
         relayStanza(receiver.getJid(), presenceToReceiver, serverRuntimeContext);
     }
 
-    private void sendChangeShowStatus(Occupant changer, Occupant receiver, Room room, String show, String status,
+    private void sendChangeShowStatus(Occupant changer, Occupant receiver, Room room, PresenceStanza stanza, 
             ServerRuntimeContext serverRuntimeContext) {
         Entity roomAndNick = new EntityImpl(room.getJID(), changer.getNick());
 
-        StanzaBuilder builder = StanzaBuilder.createPresenceStanza(roomAndNick, receiver.getJid(), null, null, show,
-                status);
+        StanzaBuilder builder = StanzaBuilder.createPresenceStanza(roomAndNick, receiver.getJid(), null, null, 
+        		getInnerElementText(stanza, "show"),
+        		getInnerElementText(stanza, "status"));
 
+        XMLElement nick = getInnerElement(stanza, "nick");
+        if (nick != null) {
+        	builder.addPreparedElement(nick);
+        }
+
+        XMLElement caps = getInnerElement(stanza, "c");
+        if (caps != null) {
+        	builder.addPreparedElement(caps);
+        }
+        
         boolean includeJid = includeJidInItem(room, receiver);
-        //        if(receiver.getJid().equals(changer.getJid())) {
-        //            // send status to indicate that this is the users own presence
-        //            new Status(StatusCode.OWN_PRESENCE).insertElement(builder);
-        //        }
-
         builder.addPreparedElement(new X(NamespaceURIs.XEP0045_MUC_USER, new MucUserItem(changer, includeJid,
                 true)));
 

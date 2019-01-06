@@ -97,7 +97,6 @@ public class IqAdminItem extends XMLElement {
 
     public Entity getJid() throws EntityFormatException {
         String jidStr = getAttributeValue("jid");
-        Entity jid = null;
         if(jidStr != null) {
             return EntityImpl.parse(jidStr); 
         } else {
