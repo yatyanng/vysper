@@ -26,7 +26,6 @@ import org.apache.vysper.compliance.SpecCompliant;
 import org.apache.vysper.xml.fragment.XMLElement;
 import org.apache.vysper.xmpp.addressing.Entity;
 import org.apache.vysper.xmpp.addressing.EntityImpl;
-import org.apache.vysper.xmpp.addressing.EntityUtils;
 import org.apache.vysper.xmpp.delivery.StanzaRelay;
 import org.apache.vysper.xmpp.delivery.failure.DeliveryException;
 import org.apache.vysper.xmpp.delivery.failure.ReturnErrorToSenderFailureStrategy;
@@ -76,11 +75,6 @@ public class DiscoInfoIQHandler extends DefaultIQHandler {
             SessionContext sessionContext) {
 		Entity to = stanza.getTo();
 		try {
-			// write inbound stanza to the user
-			Entity from = stanza.getFrom();
-			boolean fromComponent = (from != null)
-					&& EntityUtils.isAddressingServerComponent(from, serverRuntimeContext.getServerEntity());
-			logger.debug("In stanza {}, {} is a component: {}", stanza.getID(), from.getBareJID(), fromComponent);
 			// See handleSet of BindIQHandler
 			SessionContext userSessionContext = serverRuntimeContext.getResourceRegistry()
 					.getSessionContext(to.getResource());
