@@ -29,6 +29,7 @@ import org.apache.vysper.xmpp.delivery.failure.IgnoreFailureStrategy;
 import org.apache.vysper.xmpp.modules.DefaultDiscoAwareModule;
 import org.apache.vysper.xmpp.modules.extension.xep0045_muc.handler.MUCIqAdminHandler;
 import org.apache.vysper.xmpp.modules.extension.xep0045_muc.handler.MUCIqOwnerHandler;
+import org.apache.vysper.xmpp.modules.extension.xep0045_muc.handler.MUCIqRelayHandler;
 import org.apache.vysper.xmpp.modules.extension.xep0045_muc.handler.MUCMessageHandler;
 import org.apache.vysper.xmpp.modules.extension.xep0045_muc.handler.MUCPresenceHandler;
 import org.apache.vysper.xmpp.modules.extension.xep0045_muc.model.Conference;
@@ -161,6 +162,7 @@ public class MUCModule extends DefaultDiscoAwareModule implements Component, Com
                 // request for occupant, relay
                 if (occupant != null) {
                     relayDiscoStanza(occupant.getJid(), request, NamespaceURIs.XEP0030_SERVICE_DISCOVERY_INFO);
+                	request.setTarget(occupant.getJid());
                 }
                 return null;
             } else {
@@ -240,5 +242,6 @@ public class MUCModule extends DefaultDiscoAwareModule implements Component, Com
     protected void addHandlerDictionaries(List<HandlerDictionary> dictionary) {
         dictionary.add(new NamespaceHandlerDictionary(NamespaceURIs.XEP0045_MUC_OWNER, new MUCIqOwnerHandler(conference)));
         dictionary.add(new NamespaceHandlerDictionary(NamespaceURIs.XEP0045_MUC_ADMIN, new MUCIqAdminHandler(conference)));
+        dictionary.add(new NamespaceHandlerDictionary(NamespaceURIs.XEP0166_JINGLE, new MUCIqRelayHandler(conference)));
     }
 }

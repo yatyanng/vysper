@@ -85,10 +85,10 @@ public class DiscoInfoIQHandler extends DefaultIQHandler {
 			}
 			return null;
 		} catch (Exception e) {
-			logger.error("discover-info error", e);
+			logger.error("discover-info response error", e);
 			StanzaErrorCondition stanzaErrorCondition = StanzaErrorCondition.INTERNAL_SERVER_ERROR;
 			return ServerErrorResponses.getStanzaError(stanzaErrorCondition, stanza, StanzaErrorType.CANCEL,
-					"disco info request failed.", getErrorLanguage(serverRuntimeContext, sessionContext), null);
+					"discover-info response error", getErrorLanguage(serverRuntimeContext, sessionContext), null);
 		}
     }
 	
@@ -163,8 +163,18 @@ public class DiscoInfoIQHandler extends DefaultIQHandler {
 					stanzaRelay.relay(stanza.getTo(), forwardedStanza, new ReturnErrorToSenderFailureStrategy(stanzaRelay));
 					return null;
 				} else {
-					elements = serviceCollector
-							.processComponentInfoRequest(new InfoRequest(from, to, node, stanza.getID()));
+					InfoRequest infoRequest = new InfoRequest(from, to, node, stanza.getID());
+					elements = serviceCollector.processComponentInfoRequest(infoRequest);
+					if (infoRequest.getTarget() != null) {
+						SessionContext userSessionContext = serverRuntimeContext.getResourceRegistry()
+								.getSessionContext(infoRequest.getTarget().getResource());
+						logger.debug("In stanza {}, target resource is {} and user session context is {}", stanza.getID(),
+								infoRequest.getTarget().getResource(), userSessionContext);
+						if (userSessionContext != null) {
+							userSessionContext.getResponseWriter().write(stanza);
+						}
+						return null;
+					}
 				}
 			} else {
 				elements = serviceCollector.processInfoRequest(new InfoRequest(from, to, node, stanza.getID()));

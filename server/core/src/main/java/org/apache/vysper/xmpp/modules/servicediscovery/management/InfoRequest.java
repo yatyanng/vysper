@@ -34,6 +34,8 @@ public class InfoRequest {
     private String node = null;
 
     private String id;
+    
+    private Entity target;
 
     public InfoRequest(Entity from, Entity to, String node, String id) {
         this.from = from;
@@ -50,7 +52,11 @@ public class InfoRequest {
         return to;
     }
 
-    public String getNode() {
+    public String getId() {
+		return id;
+	}
+
+	public String getNode() {
         return node;
     }
 
@@ -60,4 +66,12 @@ public class InfoRequest {
     public String getID() {
         return id;
     }
+
+	public Entity getTarget() {
+		return target;
+	}
+
+	public void setTarget(Entity target) {
+		this.target = target;
+	}
 }
