@@ -83,7 +83,13 @@ public class MUCIqAdminHandler extends DefaultIQHandler {
         
         Room room = conference.findRoom(stanza.getTo());
 
-        Occupant moderator = room.findOccupantByJID(stanza.getFrom());
+        Entity from = stanza.getFrom();
+		if (from == null || !from.isResourceSet()) {
+			from = new EntityImpl(sessionContext.getInitiatingEntity(),
+					serverRuntimeContext.getResourceRegistry().getUniqueResourceForSession(sessionContext));
+		}
+		
+        Occupant moderator = room.findOccupantByJID(from);
 
         // check if moderator
         if (moderator == null || moderator.getRole() != Role.Moderator) {
@@ -137,8 +143,7 @@ public class MUCIqAdminHandler extends DefaultIQHandler {
             return MUCHandlerHelper.createErrorReply(stanza, StanzaErrorType.CANCEL,
                     StanzaErrorCondition.NOT_ALLOWED);
         }
-        
-        
+
         Entity target = null;
         
         if (item.getNick() != null) {
