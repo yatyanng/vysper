@@ -38,6 +38,7 @@ import org.apache.vysper.xmpp.modules.extension.xep0045_muc.model.Room;
 import org.apache.vysper.xmpp.modules.extension.xep0045_muc.storage.OccupantStorageProvider;
 import org.apache.vysper.xmpp.modules.extension.xep0045_muc.storage.RoomStorageProvider;
 import org.apache.vysper.xmpp.modules.servicediscovery.management.ComponentInfoRequestListener;
+import org.apache.vysper.xmpp.modules.servicediscovery.management.Feature;
 import org.apache.vysper.xmpp.modules.servicediscovery.management.InfoElement;
 import org.apache.vysper.xmpp.modules.servicediscovery.management.InfoRequest;
 import org.apache.vysper.xmpp.modules.servicediscovery.management.Item;
@@ -162,9 +163,18 @@ public class MUCModule extends DefaultDiscoAwareModule implements Component, Com
                 // request for occupant, relay
                 if (occupant != null) {
                     relayDiscoStanza(occupant.getJid(), request, NamespaceURIs.XEP0030_SERVICE_DISCOVERY_INFO);
-                	request.setTarget(occupant.getJid());
                 }
-                return null;
+                List<InfoElement> infoElements = new ArrayList<>();
+                infoElements.add(new Feature("http://jabber.org/protocol/muc#rooms"));
+                infoElements.add(new Feature("http://jabber.org/protocol/muc#traffic"));
+                infoElements.add(new Feature("urn:xmpp:coin"));
+                infoElements.add(new Feature("urn:xmpp:jingle:1"));
+                infoElements.add(new Feature("urn:xmpp:jingle:apps:rtp:1"));
+                infoElements.add(new Feature("urn:xmpp:jingle:apps:rtp:audio"));
+                infoElements.add(new Feature("urn:xmpp:jingle:apps:rtp:rtcp-fb:0"));
+                infoElements.add(new Feature("http://jabber.org/protocol/jinglenodes"));
+                infoElements.add(new Feature("urn:xmpp:jingle:dtmf:0"));
+                return infoElements;
             } else {
                 return room.getInfosFor(request);
             }

@@ -75,13 +75,17 @@ public class DiscoInfoIQHandler extends DefaultIQHandler {
             SessionContext sessionContext) {
 		Entity to = stanza.getTo();
 		try {
-			// See handleSet of BindIQHandler
-			SessionContext userSessionContext = serverRuntimeContext.getResourceRegistry()
-					.getSessionContext(to.getResource());
-			logger.debug("In stanza {}, target resource is {} and user session context is {}", stanza.getID(),
-					to.getResource(), userSessionContext);
-			if (userSessionContext != null) {
-				userSessionContext.getResponseWriter().write(stanza);
+			if (to != null) {
+				// See handleSet of BindIQHandler
+				SessionContext userSessionContext = serverRuntimeContext.getResourceRegistry()
+						.getSessionContext(to.getResource());
+				logger.debug("In stanza {}, target resource is {} and user session context is {}", stanza.getID(),
+						to.getResource(), userSessionContext);
+				if (userSessionContext != null) {
+					userSessionContext.getResponseWriter().write(stanza);
+				}
+			} else {
+				logger.debug("In stanza {}, target is unknown {}", stanza.getID(), to);
 			}
 			return null;
 		} catch (Exception e) {
@@ -153,7 +157,6 @@ public class DiscoInfoIQHandler extends DefaultIQHandler {
 						.getComponentStanzaProcessor(to) instanceof ExternalComponentStanzaProcessor;
 				logger.debug("stanza {} will be relayed to an external component: {}", stanza, externalComponent);
 				if (externalComponent) {
-
 					if (from == null || !from.isResourceSet()) {
 						from = new EntityImpl(sessionContext.getInitiatingEntity(),
 								serverRuntimeContext.getResourceRegistry().getUniqueResourceForSession(sessionContext));
@@ -165,16 +168,6 @@ public class DiscoInfoIQHandler extends DefaultIQHandler {
 				} else {
 					InfoRequest infoRequest = new InfoRequest(from, to, node, stanza.getID());
 					elements = serviceCollector.processComponentInfoRequest(infoRequest);
-					if (infoRequest.getTarget() != null) {
-						SessionContext userSessionContext = serverRuntimeContext.getResourceRegistry()
-								.getSessionContext(infoRequest.getTarget().getResource());
-						logger.debug("In stanza {}, target resource is {} and user session context is {}", stanza.getID(),
-								infoRequest.getTarget().getResource(), userSessionContext);
-						if (userSessionContext != null) {
-							userSessionContext.getResponseWriter().write(stanza);
-						}
-						return null;
-					}
 				}
 			} else {
 				elements = serviceCollector.processInfoRequest(new InfoRequest(from, to, node, stanza.getID()));

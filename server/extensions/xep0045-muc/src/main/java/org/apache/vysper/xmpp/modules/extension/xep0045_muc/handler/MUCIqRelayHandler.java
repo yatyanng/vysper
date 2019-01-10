@@ -49,7 +49,7 @@ public class MUCIqRelayHandler extends DefaultIQHandler {
             	// See handleSet of BindIQHandler
             	Stanza forwardedStanza = StanzaBuilder.createForward(stanza, stanza.getFrom(), occupant.getJid()).build();
     			SessionContext userSessionContext = serverRuntimeContext.getResourceRegistry()
-    					.getSessionContext(to.getResource());
+    					.getSessionContext(forwardedStanza.getTo().getResource());
     			logger.debug("In stanza {}, target is {} and user session context is {}", stanza.getID(),
     					occupant.getJid(), userSessionContext);
     			if (userSessionContext != null) {
