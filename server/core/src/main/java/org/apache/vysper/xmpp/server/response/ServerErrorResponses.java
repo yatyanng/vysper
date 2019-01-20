@@ -29,6 +29,8 @@ import org.apache.vysper.xmpp.stanza.StanzaBuilder;
 import org.apache.vysper.xmpp.stanza.StanzaErrorCondition;
 import org.apache.vysper.xmpp.stanza.StanzaErrorType;
 import org.apache.vysper.xmpp.stanza.XMPPCoreStanza;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -36,6 +38,8 @@ import org.apache.vysper.xmpp.stanza.XMPPCoreStanza;
  */
 public class ServerErrorResponses {
 
+	private static final Logger logger = LoggerFactory.getLogger(ServerErrorResponses.class);
+	
     private ServerErrorResponses() {
         // empty
     }
@@ -87,6 +91,14 @@ public class ServerErrorResponses {
             String errorText, String errorLang, XMLElement errorConditionElement) {
 
         if (stanza != null && "error".equals(stanza.getType())) {
+        	if (stanza.getVerifier().subElementPresent("error") && stanza.getVerifier().subElementsPresentExact(1)) {
+				XMLElement errorElement = stanza.getFirstInnerElement();
+				if (errorElement.getVerifier().subElementPresent(StanzaErrorCondition.SERVICE_UNAVAILABLE.value())) {
+					logger.debug("{} is returned. see the original request of {}",
+							StanzaErrorCondition.SERVICE_UNAVAILABLE.value(), stanza.getID());
+					return null;
+				}
+			}
             return ServerErrorResponses.getStreamError(StreamErrorCondition.UNSUPPORTED_STANZA_TYPE,
                     errorLang, "cannot respond to IQ stanza of type error with the same", null);
         }
@@ -102,6 +114,14 @@ public class ServerErrorResponses {
             String errorText, String errorLang, XMLElement errorConditionElement) {
         
         if (stanza != null && "error".equals(stanza.getType())) {
+        	if (stanza.getVerifier().subElementPresent("error") && stanza.getVerifier().subElementsPresentExact(1)) {
+				XMLElement errorElement = stanza.getFirstInnerElement();
+				if (errorElement.getVerifier().subElementPresent(StanzaErrorCondition.SERVICE_UNAVAILABLE.value())) {
+					logger.debug("{} is returned. see the original request of {}",
+							StanzaErrorCondition.SERVICE_UNAVAILABLE.value(), stanza.getID());
+					return null;
+				}
+			}
             return ServerErrorResponses.getStreamError(StreamErrorCondition.UNSUPPORTED_STANZA_TYPE,
                     errorLang, "cannot respond to IQ stanza of type error with the same", null);
         }
