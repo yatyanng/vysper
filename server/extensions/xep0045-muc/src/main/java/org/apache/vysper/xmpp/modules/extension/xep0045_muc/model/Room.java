@@ -165,10 +165,10 @@ public class Room implements InfoRequestListener, ItemRequestListener {
         return getByRole(Role.Moderator);
     }
     
-    private Set<Occupant> getByRole(Role role) {
+    public Set<Occupant> getByRole(Role role) {
         Set<Occupant> matches = new HashSet<Occupant>();
         for (Occupant occupant : getOccupants()) {
-            if (role.equals(occupant.getRole()))
+            if (role == null || role.equals(occupant.getRole()))
                 matches.add(occupant);
         }
         return matches;

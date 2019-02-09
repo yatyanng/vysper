@@ -41,23 +41,24 @@ public class MUCIqOwnerHandler extends DefaultIQHandler {
 	}
 
 	private XMLFragment createWhois(Room room, String var, String type, String label) {
-		XMLFragment value = new XMLElement(null, "value", null, new Attribute[] {},
-				new XMLFragment[] { new XMLText(room.getRoomTypes().contains(RoomType.NonAnonymous) ? "anyone" : "moderators") });
+		XMLFragment value = new XMLElement(null, "value", null, new Attribute[] {}, new XMLFragment[] {
+				new XMLText(room.getRoomTypes().contains(RoomType.NonAnonymous) ? "anyone" : "moderators") });
 
 		XMLFragment value1 = new XMLElement(null, "value", null, new Attribute[] {},
 				new XMLFragment[] { new XMLText("anyone") });
-		
-		XMLFragment option1 = new XMLElement(null, "option", null,
-				new Attribute[] { new Attribute("label", "Anyone") }, new XMLFragment[] { value1 });
+
+		XMLFragment option1 = new XMLElement(null, "option", null, new Attribute[] { new Attribute("label", "Anyone") },
+				new XMLFragment[] { value1 });
 
 		XMLFragment value2 = new XMLElement(null, "value", null, new Attribute[] {},
 				new XMLFragment[] { new XMLText("moderators") });
-		
+
 		XMLFragment option2 = new XMLElement(null, "option", null,
 				new Attribute[] { new Attribute("label", "Moderators only") }, new XMLFragment[] { value2 });
-		
+
 		XMLFragment xField = new XMLElement(null, "field", null, new Attribute[] { new Attribute("var", var),
-				new Attribute("type", type), new Attribute("label", label) }, new XMLFragment[] { value, option1, option2 });
+				new Attribute("type", type), new Attribute("label", label) },
+				new XMLFragment[] { value, option1, option2 });
 		return xField;
 	}
 
@@ -72,24 +73,29 @@ public class MUCIqOwnerHandler extends DefaultIQHandler {
 		logger.debug("Received MUC owner stanza");
 		try {
 			Room room = conference.findRoom(stanza.getTo());
-			
-			XMLFragment title = createText("title", "Configuration for " + room.getJID());
-			
-			XMLFragment instructions = createText("instructions", "Complete and submit this form to configure the room.");
-			
-			XMLFragment whois = createWhois(room, "muc#roomconfig_whois", "list-single", "Who May Discover Real JIDs?");
-			
-			XMLFragment xElement = new XMLElement(NamespaceURIs.JABBER_X_DATA, "x", null,
-					new Attribute[] { new Attribute("type", "form") }, new XMLFragment[] { title, instructions, whois });
-			
-			XMLFragment queryElement = new XMLElement(NamespaceURIs.XEP0045_MUC_OWNER, "query", null, new Attribute[0],
-					new XMLFragment[] { xElement });
-			
-			List<XMLFragment> queryElements = Arrays.asList(queryElement);
-			Stanza iqStanza = MUCStanzaBuilder.createIQStanza(stanza.getTo(), stanza.getFrom(), IQStanzaType.RESULT,
-					stanza.getID(), queryElements).build();
-
-			return iqStanza;
+			if (room == null) {
+				XMLFragment queryElement = new XMLElement(NamespaceURIs.XEP0045_MUC_OWNER, "query", null,
+						new Attribute[0], null);
+				List<XMLFragment> queryElements = Arrays.asList(queryElement);
+				Stanza iqStanza = MUCStanzaBuilder.createIQStanza(stanza.getTo(), stanza.getFrom(), IQStanzaType.RESULT,
+						stanza.getID(), queryElements).build();
+				return iqStanza;
+			} else {
+				XMLFragment title = createText("title", "Configuration for " + room.getJID());
+				XMLFragment instructions = createText("instructions",
+						"Complete and submit this form to configure the room.");
+				XMLFragment whois = createWhois(room, "muc#roomconfig_whois", "list-single",
+						"Who May Discover Real JIDs?");
+				XMLFragment xElement = new XMLElement(NamespaceURIs.JABBER_X_DATA, "x", null,
+						new Attribute[] { new Attribute("type", "form") },
+						new XMLFragment[] { title, instructions, whois });
+				XMLFragment queryElement = new XMLElement(NamespaceURIs.XEP0045_MUC_OWNER, "query", null,
+						new Attribute[0], new XMLFragment[] { xElement });
+				List<XMLFragment> queryElements = Arrays.asList(queryElement);
+				Stanza iqStanza = MUCStanzaBuilder.createIQStanza(stanza.getTo(), stanza.getFrom(), IQStanzaType.RESULT,
+						stanza.getID(), queryElements).build();
+				return iqStanza;
+			}
 		} catch (Exception e) {
 			logger.debug("An error has occurred when getting room info!", e);
 			return createBadRequestError(stanza, serverRuntimeContext, sessionContext, "Room info error");

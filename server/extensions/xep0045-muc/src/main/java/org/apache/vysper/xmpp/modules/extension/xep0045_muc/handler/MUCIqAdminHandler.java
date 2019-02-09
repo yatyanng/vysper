@@ -19,7 +19,13 @@
  */
 package org.apache.vysper.xmpp.modules.extension.xep0045_muc.handler;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.vysper.xml.fragment.Attribute;
 import org.apache.vysper.xml.fragment.XMLElement;
+import org.apache.vysper.xml.fragment.XMLFragment;
 import org.apache.vysper.xml.fragment.XMLSemanticError;
 import org.apache.vysper.xmpp.addressing.Entity;
 import org.apache.vysper.xmpp.addressing.EntityFormatException;
@@ -77,9 +83,63 @@ public class MUCIqAdminHandler extends DefaultIQHandler {
         return new EntityImpl(room.getJID(), occupant.getNick());
     }
 
+    protected Stanza handleGet(IQStanza stanza, ServerRuntimeContext serverRuntimeContext,
+			SessionContext sessionContext) {
+		logger.debug("Received MUC Admin Get stanza");
+		try {
+			Room room = conference.findRoom(stanza.getTo());
+			if (room == null) {
+				XMLFragment queryElement = new XMLElement(NamespaceURIs.XEP0045_MUC_ADMIN, "query", null,
+						new Attribute[0], null);
+				List<XMLFragment> queryElements = Arrays.asList(queryElement);
+				Stanza iqStanza = MUCStanzaBuilder.createIQStanza(stanza.getTo(), stanza.getFrom(), IQStanzaType.RESULT,
+						stanza.getID(), queryElements).build();
+				return iqStanza;
+			} else {
+				XMLElement query = stanza.getSingleInnerElementsNamed("query", NamespaceURIs.XEP0045_MUC_ADMIN);
+	            XMLElement itemElement = query.getSingleInnerElementsNamed("item", NamespaceURIs.XEP0045_MUC_ADMIN);
+	            IqAdminItem item;
+	            try {
+	                item = IqAdminItem.getWrapper(itemElement);
+	            } catch (EntityFormatException e) {
+	                return createBadRequestError(stanza, serverRuntimeContext, sessionContext,
+	                    "Invalid JID");
+	            }
+	            List<XMLFragment> xElementList = new ArrayList<>();
+	            if (item != null) {
+	            	room.getByRole(item.getRole()).stream().forEach(occupant -> {
+	            		Affiliation affiliation = room.getAffiliations().getAffiliation(occupant.getJid());
+	            		if (affiliation == null) {
+	            			affiliation = Affiliation.None;
+	            		}
+	            		if (item.getAffiliation() == null || item.getAffiliation().equals(affiliation)) {
+		            		XMLFragment xElement = new XMLElement(NamespaceURIs.XEP0045_MUC_ADMIN, "item", null,
+		    						new Attribute[] { new Attribute("jid", occupant.getJid().getFullQualifiedName()),
+		    								new Attribute("affiliation", affiliation.toString()),
+		    								new Attribute("role", occupant.getRole().toString()),
+		    								new Attribute("nick", occupant.getNick().toString())},
+		    						null);
+		            		xElementList.add(xElement);
+	            		}
+	            	});
+	            }
+				
+				XMLFragment queryElement = new XMLElement(NamespaceURIs.XEP0045_MUC_ADMIN, "query", null,
+						new Attribute[0], xElementList.toArray(new XMLFragment[0]));
+				List<XMLFragment> queryElements = Arrays.asList(queryElement);
+				Stanza iqStanza = MUCStanzaBuilder.createIQStanza(stanza.getTo(), stanza.getFrom(), IQStanzaType.RESULT,
+						stanza.getID(), queryElements).build();
+				return iqStanza;
+			}
+		} catch (Exception e) {
+			logger.debug("An error has occurred when getting occupant list!", e);
+			return createBadRequestError(stanza, serverRuntimeContext, sessionContext, "Room info error");
+		}
+	}
+    
     @Override
     protected Stanza handleSet(IQStanza stanza, ServerRuntimeContext serverRuntimeContext, SessionContext sessionContext) {
-        logger.debug("Received MUC admin stanza");
+        logger.debug("Received MUC admin Set stanza");
         
         Room room = conference.findRoom(stanza.getTo());
 
