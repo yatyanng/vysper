@@ -19,6 +19,7 @@
  */
 package org.apache.vysper.storage;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -52,6 +53,9 @@ public class OpenStorageProviderRegistry implements StorageProviderRegistry {
         return storageServices.get(clazz);
     }
 
+    public void setOtherStorageProviders(Collection<StorageProvider> storageProviders) {
+    	storageProviders.stream().forEach(this::add);
+    }
     /**
      * for this instance of storage provider, adds all parent interfaces to the registry,
      * whose direct parent interface is StorageProvider

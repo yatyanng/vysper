@@ -23,7 +23,6 @@ import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
 
 import org.apache.jackrabbit.core.TransientRepository;
 import org.apache.vysper.xmpp.addressing.Entity;
@@ -40,17 +39,10 @@ public class JcrStorage {
 
     protected static JcrStorage jcrStorageSingleton;
 
-    protected JcrStorage() {
-        super();
-        // protected
-    }
-
-    public static JcrStorage getInstance() {
-        synchronized (JcrStorage.class) {
-            if (jcrStorageSingleton == null)
-                jcrStorageSingleton = new JcrStorage();
-            return jcrStorageSingleton;
-        }
+    private Repository repository;
+    
+    public JcrStorage(String config, String home) {
+    	this.repository = new TransientRepository(config, home);
     }
 
     protected Session session = null;
@@ -59,8 +51,7 @@ public class JcrStorage {
         if (session != null)
             return session;
         try {
-            Repository repository = new TransientRepository();
-            session = repository.login(new SimpleCredentials("xmpp-admin", "adminpassword".toCharArray()));
+            session = repository.login();
             return session;
         } catch (Exception e) {
             throw new JcrStorageException(e);
@@ -108,7 +99,8 @@ public class JcrStorage {
         }
     }
 
-    protected Node getOrCreate(Node parent, String nodeName) throws JcrStorageException {
+    @SuppressWarnings("deprecation")
+	protected Node getOrCreate(Node parent, String nodeName) throws JcrStorageException {
         Node childNode;
         try {
             childNode = parent.getNode(nodeName);

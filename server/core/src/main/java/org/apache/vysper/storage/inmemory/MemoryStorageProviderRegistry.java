@@ -19,10 +19,7 @@
  */
 package org.apache.vysper.storage.inmemory;
 
-import java.util.Collection;
-
 import org.apache.vysper.storage.OpenStorageProviderRegistry;
-import org.apache.vysper.storage.StorageProvider;
 import org.apache.vysper.xmpp.authorization.SimpleUserAuthorization;
 import org.apache.vysper.xmpp.modules.roster.persistence.MemoryRosterManager;
 
@@ -43,7 +40,4 @@ public class MemoryStorageProviderRegistry extends OpenStorageProviderRegistry {
         //add("org.apache.vysper.xmpp.modules.extension.xep0160_offline_storage.MemoryOfflineStorageProvider");
     }
 
-    public void setOtherStorageProviders(Collection<StorageProvider> storageProviders) {
-    	storageProviders.stream().forEach(this::add);
-    }
 }

@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  */
 public class JcrUserManagement implements UserAuthorization, AccountManagement {
 
-    final Logger logger = LoggerFactory.getLogger(JcrUserManagement.class);
+	private static final Logger logger = LoggerFactory.getLogger(JcrUserManagement.class);
 
     protected JcrStorage jcrStorage;
 
@@ -82,37 +82,30 @@ public class JcrUserManagement implements UserAuthorization, AccountManagement {
         }
     }
 
-    public void addUser(Entity username, String password) throws AccountCreationException {
-        // if already existent, don't create, throw error
-        try {
-            if (jcrStorage.getEntityNode(username, CREDENTIALS_NAMESPACE, false) != null) {
-                throw new AccountCreationException("account already exists: " + username.getFullQualifiedName());
-            }
-        } catch (JcrStorageException e) {
-            throw new AccountCreationException("account exists check failed for " + username.getFullQualifiedName(), e);
-        }
-        // now, finally, create
+    @SuppressWarnings("deprecation")
+	public void addUser(Entity username, String password) throws AccountCreationException {
         try {
             final Node credentialsNode = jcrStorage.getEntityNode(username, CREDENTIALS_NAMESPACE, true);
             credentialsNode.setProperty("password", password);
             credentialsNode.save();
             logger.info("JCR node created: " + credentialsNode);
         } catch (Exception e) {
-            // TODO remove account?
-            throw new AccountCreationException("failed to create the account set credentials", e);
+        	logger.error("failed to create credentials", e);
+            throw new AccountCreationException("failed to create credentials", e);
         }
 
     }
 
-    public void changePassword(Entity username, String password) throws AccountCreationException {
+    @SuppressWarnings("deprecation")
+	public void changePassword(Entity username, String password) throws AccountCreationException {
         try {
             final Node credentialsNode = jcrStorage.getEntityNode(username, CREDENTIALS_NAMESPACE, false);
             credentialsNode.setProperty("password", password);
             credentialsNode.save();
             logger.info("JCR password changed: " + credentialsNode);
         } catch (Exception e) {
-            // TODO remove account?
-            throw new AccountCreationException("failed to create the account set credentials", e);
+        	logger.error("failed to change credentials", e);
+            throw new AccountCreationException("failed to change credentials", e);
         }
     }
 }

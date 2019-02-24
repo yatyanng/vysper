@@ -31,11 +31,11 @@ import org.apache.vysper.storage.jcr.vcardtemp.JcrVcardTempPersistenceManager;
  */
 public class JcrStorageProviderRegistry extends OpenStorageProviderRegistry {
 
-    public JcrStorageProviderRegistry() {
-        add(new JcrUserManagement(JcrStorage.getInstance()));
-        add(new JcrRosterManager(JcrStorage.getInstance()));
-        add(new JcrVcardTempPersistenceManager(JcrStorage.getInstance()));
-        add(new JcrPrivateDataPersistenceManager(JcrStorage.getInstance()));
+    public JcrStorageProviderRegistry(JcrStorage jcrStorage) {
+        add(new JcrUserManagement(jcrStorage));
+        add(new JcrRosterManager(jcrStorage));
+        add(new JcrVcardTempPersistenceManager(jcrStorage));
+        add(new JcrPrivateDataPersistenceManager(jcrStorage));
     }
 
 }

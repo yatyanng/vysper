@@ -1,133 +1,194 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN 2.0//EN" "http://www.springframework.org/dtd/spring-beans-2.0.dtd">
 
-  <!--
-    Licensed to the Apache Software Foundation (ASF) under one or more
-    contributor license agreements. See the NOTICE file distributed with
-    this work for additional information regarding copyright ownership.
-    The ASF licenses this file to you under the Apache License, Version
-    2.0 (the "License"); you may not use this file except in compliance
-    with the License. You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0 
-    
-    Unless required by applicable law or agreed to in writing, software 
-    distributed under the License is distributed on an "AS IS" BASIS, 
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-    See the License for the specific language governing permissions and 
-    limitations under the License.
-  -->
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
+	license agreements. See the NOTICE file distributed with this work for additional 
+	information regarding copyright ownership. The ASF licenses this file to 
+	you under the Apache License, Version 2.0 (the "License"); you may not use 
+	this file except in compliance with the License. You may obtain a copy of 
+	the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required 
+	by applicable law or agreed to in writing, software distributed under the 
+	License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
+	OF ANY KIND, either express or implied. See the License for the specific 
+	language governing permissions and limitations under the License. -->
 
 
 <beans>
-	<bean id="jicofoSubdomain" class="org.apache.vysper.xmpp.addressing.EntityImpl">
-		<constructor-arg index='0'><null /></constructor-arg>
-		<constructor-arg index='1'><value>focus.vysper.example.com</value></constructor-arg>
-		<constructor-arg index='2'><null /></constructor-arg>
-    </bean>
-	<bean id="jvbSubdomain" class="org.apache.vysper.xmpp.addressing.EntityImpl">
-		<constructor-arg index='0'><null /></constructor-arg>
-		<constructor-arg index='1'><value>jitsi-videobridge.vysper.example.com</value></constructor-arg>
-		<constructor-arg index='2'><null /></constructor-arg>
-    </bean>
-	<bean id="componentAuthentication" class="org.apache.vysper.xmpp.modules.extension.xep0114_component.InMemoryComponentAuthentication">
+	<bean id="jicofoSubdomain"
+		class="org.apache.vysper.xmpp.addressing.EntityImpl">
+		<constructor-arg index='0'>
+			<null />
+		</constructor-arg>
+		<constructor-arg index='1'>
+			<value>focus.bionic.example.com</value>
+		</constructor-arg>
+		<constructor-arg index='2'>
+			<null />
+		</constructor-arg>
+	</bean>
+	<bean id="jvbSubdomain"
+		class="org.apache.vysper.xmpp.addressing.EntityImpl">
+		<constructor-arg index='0'>
+			<null />
+		</constructor-arg>
+		<constructor-arg index='1'>
+			<value>jitsi-videobridge.bionic.example.com</value>
+		</constructor-arg>
+		<constructor-arg index='2'>
+			<null />
+		</constructor-arg>
+	</bean>
+	<bean id="asteriskSubdomain"
+		class="org.apache.vysper.xmpp.addressing.EntityImpl">
+		<constructor-arg index='0'>
+			<null />
+		</constructor-arg>
+		<constructor-arg index='1'>
+			<value>asterisk.bionic.example.com</value>
+		</constructor-arg>
+		<constructor-arg index='2'>
+			<null />
+		</constructor-arg>
+	</bean>
+	<bean id="componentAuthentication"
+		class="org.apache.vysper.xmpp.modules.extension.xep0114_component.InMemoryComponentAuthentication">
 		<constructor-arg index="0">
-            <map>
-                <entry key-ref="jicofoSubdomain" value="focus_secret" />
+			<map>
+				<entry key-ref="jicofoSubdomain" value="focus_secret" />
 				<entry key-ref="jvbSubdomain" value="jvb_secret" />
-            </map>
-        </constructor-arg>
-    </bean>
-	
-    <bean id="memoryStorageRegistry" class="org.apache.vysper.storage.inmemory.MemoryStorageProviderRegistry">
+				<entry key-ref="asteriskSubdomain" value="asterisk_secret" />
+			</map>
+		</constructor-arg>
+	</bean>
+
+	<!-- <bean id="memoryStorageRegistry" class="org.apache.vysper.storage.inmemory.MemoryStorageProviderRegistry"> 
+		<property name='otherStorageProviders'> <list> <ref bean="componentAuthentication"/> 
+		</list> </property> </bean> -->
+
+	<bean id="jcrStorage"
+		class="org.apache.vysper.storage.jcr.JcrStorage">
+		<constructor-arg index="0">
+			<value>/opt/vysper-0.7/config/repository.xml</value>
+		</constructor-arg>
+		<constructor-arg index="1">
+			<value>/opt/vysper-0.7/repository</value>
+		</constructor-arg>
+	</bean>
+	<bean id="jcrStorageRegistry"
+		class="org.apache.vysper.storage.jcr.JcrStorageProviderRegistry">
+		<constructor-arg ref="jcrStorage" />
 		<property name='otherStorageProviders'>
 			<list>
-                <ref bean="componentAuthentication"/>
-            </list>
+				<ref bean="componentAuthentication" />
+			</list>
 		</property>
 	</bean>
-	<!--
-    <bean id="jcrStorageRegistry" class="org.apache.vysper.storage.jcr.JcrStorageProviderRegistry" />
-	 --> 
-    <!-- choose one of the storage registries -->
-    <alias name="memoryStorageRegistry" alias="storageRegistry" />
+	<!-- choose one of the storage registries -->
+	<alias name="jcrStorageRegistry" alias="storageRegistry" />
 
-    <!-- default users; remove if you have persistently stored users
-         NOTE: if passwords are empty, random passwords are generated and printed on the console
-               So, your default install of Vysper is secure from the very beginning
-    -->
-    <bean id="addUsers" class="org.apache.vysper.spring.AddUserHelper">
-        <constructor-arg index="0">
-            <map>
-                <entry key="admin@vysper.example.com" value="admin" />
-				<entry key="focus@vysper.example.com" value="focus_secret" />
-            </map>
-        </constructor-arg>
-        <property name="storageProviderRegistry" ref="storageRegistry" />
-    </bean>
-    
-    <bean id="c2sEndpoint" class="org.apache.vysper.mina.C2SEndpoint">
-		<property name="hostname" value="vysper.example.com" />
+	<!-- default users; remove if you have persistently stored users NOTE: if 
+		passwords are empty, random passwords are generated and printed on the console 
+		So, your default install of Vysper is secure from the very beginning -->
+	<bean id="addUsers" class="org.apache.vysper.spring.AddUserHelper">
+		<constructor-arg index="0">
+			<map>
+				<entry key="conference-gateway@bionic.example.com"
+					value="conference_gateway" />
+				<entry key="admin1@bionic.example.com" value="admin1" />
+				<entry key="focus@bionic.example.com" value="focus_secret" />
+			</map>
+		</constructor-arg>
+		<property name="storageProviderRegistry"
+			ref="storageRegistry" />
+	</bean>
+
+	<bean id="c2sEndpoint" class="org.apache.vysper.mina.C2SEndpoint">
+		<property name="hostname" value="bionic.example.com" />
 		<property name="port" value="5222" />
-    </bean>
-    
-	<bean id="jicofoEndpoint" class="org.apache.vysper.mina.ComponentEndpoint">
-		<property name="hostname" value="jicofo.vysper.example.com" />
+	</bean>
+
+	<bean id="jicofoEndpoint"
+		class="org.apache.vysper.mina.ComponentEndpoint">
+		<property name="hostname" value="bionic.example.com" />
 		<property name="port" value="5347" />
-    </bean>
-	
-	<bean id="jvbEndpoint" class="org.apache.vysper.mina.ComponentEndpoint">
-		<property name="hostname" value="jitsi-videobridge.vysper.example.com" />
+	</bean>
+
+	<bean id="jvbEndpoint"
+		class="org.apache.vysper.mina.ComponentEndpoint">
+		<property name="hostname" value="bionic.example.com" />
 		<property name="port" value="5275" />
-    </bean>
-    <!-- for making the server available over HTTP transport, configure the BOSH endpoint
-         BOSH requires extension xep0124-xep0206-bosh to be on the classpath.
-    -->
-    <!--
-    <bean id="boshEndpoint" class="org.apache.vysper.xmpp.extension.xep0124.BoshEndpoint">
-        <property name="accessControlAllowOrigin">
-            <list><value>*</value></list>
-        </property>
-        <property name="port" value="8080" />
-        <property name="contextPath" value="/bosh" />
-    </bean>
-    -->
-    
-    <bean id="server" class="org.apache.vysper.spring.SpringCompatibleXMPPServer"
-          init-method="init" destroy-method="destroy">
-       
-        <constructor-arg value="vysper.example.com"/>
-        <property name="endpoints">
-            <list>
-                <ref bean="c2sEndpoint"/>
-                <ref bean="jicofoEndpoint"/>
-				<ref bean="jvbEndpoint"/>
-            </list>
-        </property>
-        <property name="storageProviderRegistry" ref="storageRegistry" />
-        <property name="certificateFile" value="classpath:vysper.jks" />
-        <property name="certificatePassword" value="" />
-        <property name="modules" >
-            <list>
-                <bean class="org.apache.vysper.xmpp.modules.extension.xep0092_software_version.SoftwareVersionModule"/>
-                <bean class="org.apache.vysper.xmpp.modules.extension.xep0202_entity_time.EntityTimeModule" />
-                <bean class="org.apache.vysper.xmpp.modules.extension.xep0119_xmppping.XmppPingModule" />
-                <bean class="org.apache.vysper.xmpp.modules.extension.xep0050_adhoc_commands.AdhocCommandsModule" />
-                <bean class="org.apache.vysper.xmpp.modules.extension.xep0133_service_administration.ServiceAdministrationModule" >
-                    <property name="addAdmins">
-                        <list>
-							<value>admin@vysper.example.com</value>
-							<value>focus@vysper.example.com</value>
+	</bean>
+
+	<bean id="asteriskEndpoint"
+		class="org.apache.vysper.mina.ComponentEndpoint">
+		<property name="hostname" value="bionic.example.com" />
+		<property name="port" value="5276" />
+	</bean>
+
+	<!-- for making the server available over HTTP transport, configure the 
+		BOSH endpoint BOSH requires extension xep0124-xep0206-bosh to be on the classpath. -->
+	<bean id="boshEndpoint"
+		class="org.apache.vysper.xmpp.extension.xep0124.BoshEndpoint">
+		<property name="accessControlAllowOrigin">
+			<list>
+				<value>*</value>
+			</list>
+		</property>
+		<property name="port" value="8080" />
+		<property name="contextPath" value="/bosh" />
+	</bean>
+
+	<bean id="server"
+		class="org.apache.vysper.spring.SpringCompatibleXMPPServer"
+		init-method="init" destroy-method="destroy">
+		<constructor-arg value="bionic.example.com" />
+		<property name="endpoints">
+			<list>
+				<ref bean="c2sEndpoint" />
+				<ref bean="boshEndpoint" />
+				<ref bean="jicofoEndpoint" />
+				<ref bean="jvbEndpoint" />
+				<ref bean="asteriskEndpoint" />
+			</list>
+		</property>
+		<property name="storageProviderRegistry"
+			ref="storageRegistry" />
+		<property name="certificateFile"
+			value="file:///opt/vysper-0.7/config/bionic.jks" />
+		<property name="certificatePassword" value="bionic" />
+		<property name="modules">
+			<list>
+				<bean
+					class="org.apache.vysper.xmpp.modules.extension.xep0092_software_version.SoftwareVersionModule" />
+				<bean
+					class="org.apache.vysper.xmpp.modules.extension.xep0202_entity_time.EntityTimeModule" />
+				<bean
+					class="org.apache.vysper.xmpp.modules.extension.xep0119_xmppping.XmppPingModule" />
+				<bean
+					class="org.apache.vysper.xmpp.modules.extension.xep0050_adhoc_commands.AdhocCommandsModule" />
+				<bean
+					class="org.apache.vysper.xmpp.modules.extension.xep0133_service_administration.ServiceAdministrationModule">
+					<property name="addAdmins">
+						<list>
+							<value>conference-gateway@bionic.example.com</value>
+							<value>admin1@bionic.example.com</value>
+							<value>focus@bionic.example.com</value>
 						</list>
-                    </property>
-                </bean>
-                <!-- below some more modules which are available as separately-built jars. 
-                     make sure they are on the classpath when enabling them or remove the beans below, 
-                     depending on the features your server should expose -->
-                <bean class="org.apache.vysper.xmpp.modules.extension.xep0060_pubsub.PublishSubscribeModule" />
-                <bean class="org.apache.vysper.xmpp.modules.extension.xep0045_muc.MUCModule" />
-            </list>
-        </property>
-    </bean>
-    
+					</property>
+				</bean>
+				<!-- below some more modules which are available as separately-built 
+					jars. make sure they are on the classpath when enabling them or remove the 
+					beans below, depending on the features your server should expose -->
+				<bean
+					class="org.apache.vysper.xmpp.modules.extension.xep0060_pubsub.PublishSubscribeModule">
+					<constructor-arg index='0'>
+						<value>pubsub</value>
+					</constructor-arg>
+				</bean>
+				<bean
+					class="org.apache.vysper.xmpp.modules.extension.xep0045_muc.MUCModule" />
+			</list>
+		</property>
+	</bean>
+
 </beans>
